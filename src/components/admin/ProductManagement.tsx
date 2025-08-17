@@ -164,7 +164,10 @@ const ProductManagement = ({
               )}
               {currentPage > 1 && (
                 <PaginationItem>
-                  <PaginationLink href="/admin/products?page=1" isActive={false}>
+                  <PaginationLink
+                    href="/admin/products?page=1"
+                    isActive={false}
+                  >
                     {1}
                   </PaginationLink>
                 </PaginationItem>
@@ -205,6 +208,11 @@ const ProductManagement = ({
               )}
             </PaginationContent>
           </Pagination>
+        </CardFooter>
+      )}
+      {!pageCount && (
+        <CardFooter className="mx-auto">
+          No Product Added to Catalog Yet
         </CardFooter>
       )}
 

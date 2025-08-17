@@ -1,12 +1,19 @@
 "use server";
 import slugify from "slugify";
 import { connectDB } from "./db";
-import { Category, Contact, Product } from "./models";
-import { CategoryType, ContactType, ProductImage, ProductType } from "./types";
-import mongoose from "mongoose";
+import { Category, Contact, Product, Variant } from "./models";
+import type {
+  CategoryType,
+  ContactType,
+  ProductImage,
+  ProductType,
+  VariantType,
+} from "./types";
+import mongoose, { Types, startSession } from "mongoose";
 import cloudinary from "cloudinary";
 import { revalidatePath } from "next/cache";
 import { limit } from "./constant";
+import { v4 as uuidv4 } from "uuid";
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -14,37 +21,38 @@ cloudinary.v2.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-// let cachedCategories: {
-//   categories: CategoryType[];
-//   totalCount: number;
-//   page: number;
-// } = {
-//   categories: [],
-//   totalCount: 0,
-//   page: 0,
-// };
-
-const mapToProduct = (product: ProductType): ProductType => {
+const mapToProduct = (product: any): ProductType => {
   return {
-    id: product.id,
+    id: product.id || product._id?.toString(),
     name: product.name,
     slug: product.slug,
     categoryId: {
-      id: product.categoryId.id,
-      name: product.categoryId.name,
+      id: product.categoryId?.id || product.categoryId?._id?.toString(),
+      name: product.categoryId?.name,
     },
+    variantId: product.variantId,
+    colorCode: product.colorCode,
+    colorName: product.colorName,
     images: product.images,
     description: product.description,
   };
 };
 
-const mapToCategory = (category: CategoryType): CategoryType => {
+const mapToCategory = (category: any): CategoryType => {
   return {
-    id: category.id,
+    id: category.id || category._id?.toString(),
     name: category.name,
     slug: category.slug,
     image: category.image,
     description: category.description,
+  };
+};
+
+const mapToVariant = (variant: any): VariantType => {
+  return {
+    id: variant.id || variant._id?.toString(),
+    name: variant.name,
+    variants: variant.variants || [],
   };
 };
 
@@ -57,33 +65,13 @@ export async function fetchCategoriesCount(): Promise<number> {
 export async function fetchCategories(
   page?: number | 0
 ): Promise<{ totalCount: number; categories: CategoryType[] }> {
-  // if (cachedCategories.totalCount && page && cachedCategories.page >= page) {
-  //   return {
-  //     categories: cachedCategories.categories.slice(
-  //       (page - 1) * limit,
-  //       page * limit
-  //     ),
-  //     totalCount: cachedCategories.totalCount,
-  //   };
-  // }
-
   await connectDB();
   const categories = await Category.find({})
     .limit(limit)
     .skip(page && page > 1 ? (page - 1) * limit : 0);
 
   const totalCount = Number(await Category.countDocuments());
-
-  const ctgs = JSON.parse(JSON.stringify(categories)) as CategoryType[];
-
-  // cachedCategories = {
-  //   categories: [
-  //     ...cachedCategories.categories,
-  //     ...ctgs.map((ctg) => mapToCategory(ctg)),
-  //   ],
-  //   totalCount,
-  //   page: Number(page),
-  // };
+  const ctgs = JSON.parse(JSON.stringify(categories)) as any[];
 
   return {
     totalCount,
@@ -92,7 +80,7 @@ export async function fetchCategories(
 }
 
 export async function fetchCategory(
-  categoryId: mongoose.Types.ObjectId
+  categoryId: Types.ObjectId
 ): Promise<CategoryType> {
   await connectDB();
   const category = await Category.findById(categoryId);
@@ -117,18 +105,10 @@ export async function addCategory(categoryData: FormData) {
     description,
   });
 
-  // cachedCategories.categories.push({
-  //   id: category.id,
-  //   name,
-  //   image: JSON.parse(image),
-  //   slug,
-  //   description,
-  // });
-
-  return JSON.parse(JSON.stringify(category)); // serialize
+  return JSON.parse(JSON.stringify(category));
 }
 
-export async function deleteCategory(categoryId: mongoose.Types.ObjectId) {
+export async function deleteCategory(categoryId: Types.ObjectId) {
   await connectDB();
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -137,15 +117,12 @@ export async function deleteCategory(categoryId: mongoose.Types.ObjectId) {
     const category = await Category.findById(categoryId).session(session);
     if (!category) throw new Error("Category not found");
 
-    // 1️⃣ Delete category image from Cloudinary
     if (category.image?.id) {
       await cloudinary.v2.uploader.destroy(category.image.id);
     }
 
-    // 2️⃣ Find all products in this category
     const products = await Product.find({ categoryId }).session(session);
 
-    // 3️⃣ Delete each product’s images from Cloudinary
     for (const product of products) {
       if (Array.isArray(product.images)) {
         for (const img of product.images) {
@@ -156,32 +133,17 @@ export async function deleteCategory(categoryId: mongoose.Types.ObjectId) {
       }
     }
 
-    // 4️⃣ Delete all products for this category
     await Product.deleteMany({ categoryId }).session(session);
-
-    // 5️⃣ Delete category
     await Category.findByIdAndDelete(categoryId).session(session);
 
-    // ✅ Commit transaction
     await session.commitTransaction();
     session.endSession();
-
-    // const newCategories = cachedCategories.categories.filter(
-    //   (f) => f.id == categoryId
-    // );
-
-    // cachedCategories = {
-    //   categories: newCategories,
-    //   totalCount: newCategories.length,
-    //   page: cachedCategories.page,
-    // };
 
     return {
       success: true,
       message: "Category and its products deleted successfully",
     };
   } catch (error) {
-    // ❌ Rollback transaction if anything fails
     await session.abortTransaction();
     session.endSession();
     throw new Error(`Failed to delete category: ${error}`);
@@ -189,7 +151,7 @@ export async function deleteCategory(categoryId: mongoose.Types.ObjectId) {
 }
 
 export async function updateCategory(
-  categoryId: mongoose.Types.ObjectId,
+  categoryId: Types.ObjectId,
   updatedData: {
     name: string;
     description: string;
@@ -201,13 +163,10 @@ export async function updateCategory(
   const category = await Category.findById(categoryId);
   if (!category) throw new Error("Category not found");
 
-  // If there’s a new image and it’s different from the existing one
   if (updatedData.image && updatedData.image.id !== category.image?.id) {
-    // Delete old image from Cloudinary
     if (category.image?.id) {
       await cloudinary.v2.uploader.destroy(category.image.id);
     }
-    // Save the new image object
     category.image = updatedData.image;
   }
 
@@ -219,6 +178,89 @@ export async function updateCategory(
   return { success: true, message: "Category updated successfully" };
 }
 
+// Variant Actions
+export async function fetchVariants(): Promise<VariantType[]> {
+  await connectDB();
+  const variants = await Variant.find({});
+  const variantsData = JSON.parse(JSON.stringify(variants)) as any[];
+  return variantsData.map((variant) => mapToVariant(variant));
+}
+
+export async function createVariant(
+  name: string,
+  productId: string,
+  colorCode: string,
+  colorName: string
+): Promise<VariantType> {
+  await connectDB();
+
+  const variant = await Variant.create({
+    name,
+    variants: [
+      {
+        productId,
+        colorCode,
+        colorName,
+      },
+    ],
+  });
+
+  return JSON.parse(JSON.stringify(variant));
+}
+
+export async function addProductToVariant(
+  variantId: string,
+  productId: string,
+  colorCode: string,
+  colorName: string
+) {
+  await connectDB();
+
+  const variant = await Variant.findById(variantId);
+  if (!variant) throw new Error("Variant not found");
+
+  variant.variants.push({
+    productId,
+    colorCode,
+    colorName,
+  });
+
+  await variant.save();
+  return JSON.parse(JSON.stringify(variant));
+}
+
+
+export async function updateVariantName(variantId: string, newName: string) {
+  await connectDB()
+
+  const variant = await Variant.findById(variantId)
+  if (!variant) throw new Error("Variant not found")
+
+  variant.name = newName
+  await variant.save()
+
+  return JSON.parse(JSON.stringify(variant))
+}
+
+export async function removeProductFromVariant(variantId: string, productId: string) {
+  await connectDB()
+
+  const variant = await Variant.findById(variantId)
+  if (!variant) throw new Error("Variant not found")
+
+  // Remove the product from the variant
+  variant.variants = variant.variants.filter((v: any) => v.productId.toString() !== productId)
+
+  // If variant has only one product left, delete the variant
+  if (variant.variants.length <= 1) {
+    await Variant.findByIdAndDelete(variantId)
+    return { deleted: true }
+  } else {
+    await variant.save()
+    return { deleted: false, variant: JSON.parse(JSON.stringify(variant)) }
+  }
+}
+
 // Products
 export async function fetchProducts(
   page?: number | 0
@@ -227,11 +269,10 @@ export async function fetchProducts(
   const products = await Product.find({})
     .limit(limit)
     .skip(page && page > 1 ? (page - 1) * limit : 0)
-    .populate("categoryId", "id name");
+    .populate("categoryId", "id name")
 
   const totalCount = Number(await Product.countDocuments());
-
-  const prods = JSON.parse(JSON.stringify(products)) as ProductType[];
+  const prods = JSON.parse(JSON.stringify(products)) as any[];
 
   return {
     totalCount,
@@ -246,14 +287,15 @@ export async function fetchProductsCount(): Promise<number> {
 }
 
 export async function fetchByCategory(
-  categoryId: mongoose.Types.ObjectId,
+  categoryId: Types.ObjectId,
   page?: number | 0
 ): Promise<{ totalCount: number; products: ProductType[] }> {
   await connectDB();
   const products = await Product.find({ categoryId })
     .limit(limit)
     .skip(page && page > 1 ? (page - 1) * limit : 0)
-    .populate("categoryId");
+    .populate("categoryId")
+    .populate("variantId");
 
   const totalCount = Number(
     await Product.findOne({ categoryId }).countDocuments()
@@ -261,18 +303,17 @@ export async function fetchByCategory(
 
   return {
     totalCount,
-    products: JSON.parse(JSON.stringify(products)), // serialize
+    products: JSON.parse(JSON.stringify(products)),
   };
 }
 
 export async function fetchProduct(
-  productId: mongoose.Types.ObjectId
+  productId: Types.ObjectId
 ): Promise<ProductType> {
   await connectDB();
-  const product = await Product.findById(productId).populate(
-    "categoryId",
-    "id name"
-  );
+  const product = await Product.findById(productId)
+    .populate("categoryId", "id name")
+    .populate("variantId", "id name variants");
 
   return JSON.parse(JSON.stringify(product));
 }
@@ -282,6 +323,10 @@ export async function addProduct(productData: FormData) {
   const imgs = productData.getAll("images") as string[];
   const description = productData.get("description") as string;
   const categoryId = productData.get("categoryId") as string;
+  const isVariant = productData.get("isVariant") as string;
+  const variantId = productData.get("variantId") as string;
+  const colorCode = productData.get("colorCode") as string;
+  const colorName = productData.get("colorName") as string;
 
   if (
     !name ||
@@ -293,6 +338,10 @@ export async function addProduct(productData: FormData) {
     throw new Error("All fields are required");
   }
 
+  if (!colorCode || !colorName) {
+    throw new Error("Color code and color name are required");
+  }
+
   const images: { id: string; url: string }[] = [];
   imgs.forEach((img) => {
     images.push(JSON.parse(img));
@@ -300,17 +349,56 @@ export async function addProduct(productData: FormData) {
 
   await connectDB();
   const slug = slugify(name.toLowerCase(), "-");
-  const product = await Product.create({
+
+  let finalVariantId = null;
+
+  if (isVariant === "true") {
+    // Add to existing variant
+    if (!variantId) {
+      throw new Error("Variant ID is required when adding to existing variant");
+    }
+    finalVariantId = new Types.ObjectId(variantId);
+  } else {
+    // Create new variant
+
+    const newVariant = await createVariant(
+      name,
+      uuidv4(),
+      colorCode,
+      colorName
+    );
+    finalVariantId = new Types.ObjectId(newVariant.id);
+  }
+
+  const productPayload: any = {
     name,
     images,
     slug,
     description,
     categoryId,
-  });
-  return JSON.parse(JSON.stringify(product)); // serialize
+    variantId: finalVariantId,
+    colorCode: colorCode,
+    colorName: colorName,
+  };
+
+  const product = await Product.create(productPayload);
+
+  // Update the variant with the product ID
+  if (isVariant === "true") {
+    await addProductToVariant(variantId, product.id, colorCode, colorName);
+  } else {
+    // Update the newly created variant with the actual product ID
+    await Variant.findByIdAndUpdate(finalVariantId, {
+      $set: {
+        "variants.0.productId": product.id,
+      },
+    });
+  }
+
+  return JSON.parse(JSON.stringify(product));
 }
 
-export async function deleteProduct(productId: mongoose.Types.ObjectId) {
+export async function deleteProduct(productId: Types.ObjectId) {
   await connectDB();
 
   const product = await Product.findById(productId);
@@ -332,13 +420,16 @@ export async function deleteProduct(productId: mongoose.Types.ObjectId) {
 }
 
 export async function updateProduct(
-  productId: mongoose.Types.ObjectId,
+  productId: Types.ObjectId,
   updatedData: {
     name?: string;
     description?: string;
     slug?: string;
-    categoryId?: mongoose.Types.ObjectId | string;
-    images?: ProductImage[]; // Array of image objects
+    categoryId?: Types.ObjectId | string;
+    images?: ProductImage[];
+    variantId?: Types.ObjectId | string;
+    colorCode?: string;
+    colorName?: string;
   }
 ) {
   await connectDB();
@@ -346,13 +437,10 @@ export async function updateProduct(
   const product = await Product.findById(productId);
   if (!product) throw new Error("Product not found");
 
-  // If name is updated, update slug
   if (updatedData.name && updatedData.name !== product.name) {
-    // Only update slug if name actually changed
     updatedData.slug = slugify(updatedData.name.toLowerCase(), "-");
   }
 
-  // Handle image deletions from Cloudinary if images are removed from the list
   const oldImageIds = new Set(
     product.images.map((img: ProductImage) => img.id)
   );
@@ -374,7 +462,7 @@ export async function updateProduct(
   }
 
   await Product.findByIdAndUpdate(productId, updatedData, { new: true });
-  revalidatePath("/admin"); // Revalidate admin page
+  revalidatePath("/admin");
   return { success: true, message: "Product updated successfully." };
 }
 

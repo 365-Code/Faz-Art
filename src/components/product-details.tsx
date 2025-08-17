@@ -16,8 +16,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import type { ProductType } from "@/lib/types";
+import type { ProductType, ProductVariantType, VariantType } from "@/lib/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Separator } from "./ui/separator";
 
 export default function ProductDetailsClient({
   product,
@@ -149,6 +150,11 @@ export default function ProductDetailsClient({
               </p>
             </div>
 
+            <div className="space-y-4">
+              <Separator />
+              <ProductVariants product={product} />
+            </div>
+
             <div>
               {/* tabs */}
               <Tabs defaultValue="info">
@@ -206,3 +212,56 @@ export default function ProductDetailsClient({
     </div>
   );
 }
+
+const ProductVariants = ({
+  product,
+}: // productVariants,
+{
+  product: ProductType;
+  // productVariants: ProductVariantType[];
+}) => {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-gray-900 tracking-wide uppercase">
+          Color
+        </h3>
+
+        <p className="text-base text-gray-600 font-light">{"Silver"}</p>
+      </div>
+
+      <div className="flex space-x-4 h-8">
+        {product.variantId.variants.map((variant) => (
+          <Link href={"/products/" + variant.productId}>
+            <Button
+              key={variant.colorName}
+              className={`group relative h-12 w-12 rounded-full border-2 transition-all duration-300 hover:scale-110 hover:shadow-lg ${
+                product.id.toString() === variant.productId
+                  ? "border-gray-900 shadow-lg scale-110"
+                  : "border-gray-300 hover:border-gray-400"
+              }`}
+              style={{ backgroundColor: variant.colorCode }}
+              aria-label={`Select ${variant.colorName}`}
+            >
+              {/* Inner ring for selected state */}
+
+              {product.id.toString() === variant.productId && (
+                <div className="absolute inset-1 rounded-full border-2 border-white shadow-inner" />
+              )}
+
+              {/* Special border for white variant */}
+
+              {variant.colorCode === product.colorCode && (
+                <div className="absolute inset-0 rounded-full border border-gray-200" />
+              )}
+
+              {/* Hover effect */}
+
+              <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
+            </Button>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+};

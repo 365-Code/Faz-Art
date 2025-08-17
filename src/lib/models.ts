@@ -1,5 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
-import { Model } from "mongoose";
+import { Schema, Document, Types, Model, models, model } from "mongoose";
 
 // Interface for Category
 export interface ICategory extends Document {
@@ -22,10 +21,37 @@ export interface IProduct extends Document {
     id: string;
     url: string;
   }>;
-  categoryId: mongoose.Types.ObjectId;
+  categoryId: Types.ObjectId;
+  variantId: Types.ObjectId;
+  colorCode: string;
+  colorName: string;
   description: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface IContact extends Document {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+}
+
+export interface IVisitor extends Document {
+  visitorId: string;
+  firstVisit: Date;
+  lastSeen: Date;
+}
+
+export interface IVariant extends Document {
+  name: string;
+  variants: {
+    productId: string;
+    colorName: string;
+    colorCode: string;
+  }[];
 }
 
 // Category Schema
@@ -70,6 +96,19 @@ const ProductSchema = new Schema<IProduct>(
       ref: "Category",
       required: true,
     },
+    variantId: {
+      type: Schema.Types.ObjectId,
+      ref: "Variant",
+      required: false,
+    },
+    colorCode: {
+      type: String,
+      required: false,
+    },
+    colorName: {
+      type: String,
+      required: false,
+    },
     images: [
       {
         id: { type: String, required: true },
@@ -89,38 +128,6 @@ const ProductSchema = new Schema<IProduct>(
     },
   }
 );
-
-// Export models
-export const Category: Model<ICategory> =
-  mongoose.models.Category ||
-  mongoose.model<ICategory>("Category", CategorySchema);
-
-export const Product: Model<IProduct> =
-  mongoose.models.Product || mongoose.model<IProduct>("Product", ProductSchema);
-
-export interface IVisitor extends Document {
-  visitorId: string;
-  firstVisit: Date;
-  lastSeen: Date;
-}
-
-const VisitorSchema = new Schema<IVisitor>({
-  visitorId: { type: String, required: true, unique: true },
-  firstVisit: { type: Date, required: true },
-  lastSeen: { type: Date, required: true },
-});
-
-export const Visitor: Model<IVisitor> =
-  mongoose.models.Visitor || mongoose.model<IVisitor>("Visitor", VisitorSchema);
-
-export interface IContact extends Document {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  subject: string;
-  message: string;
-}
 
 const ContactSchema = new Schema<IContact>(
   {
@@ -162,5 +169,60 @@ const ContactSchema = new Schema<IContact>(
   }
 );
 
+const VisitorSchema = new Schema<IVisitor>({
+  visitorId: { type: String, required: true, unique: true },
+  firstVisit: { type: Date, required: true },
+  lastSeen: { type: Date, required: true },
+});
+
+const VariantSchema = new Schema<IVariant>(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    variants: [
+      {
+        productId: {
+          type: String,
+          required: true,
+        },
+        colorCode: {
+          type: String,
+          required: true,
+        },
+        colorName: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+  },
+  {
+    timestamps: true, // Automatically adds createdAt & updatedAt
+    toJSON: {
+      virtuals: true,
+      transform: (_, ret) => {
+        ret.id = ret._id; // Replace _id with id
+        delete ret._id;
+        // delete ret.__v; // Remove Mongoose version key
+      },
+    },
+  }
+);
+
+// Export models
+export const Category: Model<ICategory> =
+  models.Category || model<ICategory>("Category", CategorySchema);
+
+export const Product: Model<IProduct> =
+  models.Product || model<IProduct>("Product", ProductSchema);
+
+export const Visitor: Model<IVisitor> =
+  models.Visitor || model<IVisitor>("Visitor", VisitorSchema);
+
 export const Contact: Model<IContact> =
-  mongoose.models.Contact || mongoose.model<IContact>("Contact", ContactSchema);
+  models.Contact || model<IContact>("Contact", ContactSchema);
+
+export const Variant: Model<IVariant> =
+  models.Variant || model<IVariant>("Variant", VariantSchema);

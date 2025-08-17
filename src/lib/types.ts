@@ -22,6 +22,13 @@ export type ProductType = {
     name: string;
     id: mongoose.Types.ObjectId;
   };
+  variantId: {
+    id: string;
+    name: string;
+    variants: ProductVariantType[]
+  };
+  colorCode: string;
+  colorName: string;
 };
 
 export type ProductImage = {
@@ -49,4 +56,16 @@ export type ContactType = {
   phone: string;
   subject: string;
   message: string;
+};
+
+export type ProductVariantType = {
+  productId: string;
+  colorCode: string;
+  colorName: string;
+};
+
+export type VariantType = {
+  id: string;
+  name: string;
+  variants: Array<ProductVariantType>;
 };
