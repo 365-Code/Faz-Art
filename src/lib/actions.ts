@@ -229,35 +229,39 @@ export async function addProductToVariant(
   return JSON.parse(JSON.stringify(variant));
 }
 
-
 export async function updateVariantName(variantId: string, newName: string) {
-  await connectDB()
+  await connectDB();
 
-  const variant = await Variant.findById(variantId)
-  if (!variant) throw new Error("Variant not found")
+  const variant = await Variant.findById(variantId);
+  if (!variant) throw new Error("Variant not found");
 
-  variant.name = newName
-  await variant.save()
+  variant.name = newName;
+  await variant.save();
 
-  return JSON.parse(JSON.stringify(variant))
+  return JSON.parse(JSON.stringify(variant));
 }
 
-export async function removeProductFromVariant(variantId: string, productId: string) {
-  await connectDB()
+export async function removeProductFromVariant(
+  variantId: string,
+  productId: string
+) {
+  await connectDB();
 
-  const variant = await Variant.findById(variantId)
-  if (!variant) throw new Error("Variant not found")
+  const variant = await Variant.findById(variantId);
+  if (!variant) throw new Error("Variant not found");
 
   // Remove the product from the variant
-  variant.variants = variant.variants.filter((v: any) => v.productId.toString() !== productId)
+  variant.variants = variant.variants.filter(
+    (v: any) => v.productId.toString() !== productId
+  );
 
   // If variant has only one product left, delete the variant
   if (variant.variants.length <= 1) {
-    await Variant.findByIdAndDelete(variantId)
-    return { deleted: true }
+    await Variant.findByIdAndDelete(variantId);
+    return { deleted: true };
   } else {
-    await variant.save()
-    return { deleted: false, variant: JSON.parse(JSON.stringify(variant)) }
+    await variant.save();
+    return { deleted: false, variant: JSON.parse(JSON.stringify(variant)) };
   }
 }
 
@@ -270,6 +274,7 @@ export async function fetchProducts(
     .limit(limit)
     .skip(page && page > 1 ? (page - 1) * limit : 0)
     .populate("categoryId", "id name")
+    .populate("variantId", "id name");
 
   const totalCount = Number(await Product.countDocuments());
   const prods = JSON.parse(JSON.stringify(products)) as any[];
@@ -398,29 +403,133 @@ export async function addProduct(productData: FormData) {
   return JSON.parse(JSON.stringify(product));
 }
 
+// export async function deleteProduct(productId: Types.ObjectId) {
+//   await connectDB();
+
+//   const product = await Product.findById(productId);
+//   if (!product) throw new Error("Product not found");
+
+//   if (Array.isArray(product.images)) {
+//     for (const img of product.images) {
+//       if (img.id) {
+//         await cloudinary.v2.uploader.destroy(img.id);
+//       }
+//     }
+//   }
+
+//   await Product.findByIdAndDelete(productId);
+
+//   revalidatePath("/admin/products");
+
+//   return { success: true, message: "Product and images deleted successfully." };
+// }
+
+// export async function updateProduct(
+//   productId: Types.ObjectId,
+//   updatedData: {
+//     name?: string;
+//     description?: string;
+//     slug?: string;
+//     categoryId?: Types.ObjectId | string;
+//     images?: ProductImage[];
+//     variantId?: Types.ObjectId | string;
+//     colorCode?: string;
+//     colorName?: string;
+//   }
+// ) {
+//   await connectDB();
+
+//   const product = await Product.findById(productId);
+//   if (!product) throw new Error("Product not found");
+
+//   if (updatedData.name && updatedData.name !== product.name) {
+//     updatedData.slug = slugify(updatedData.name.toLowerCase(), "-");
+//   }
+
+//   const oldImageIds = new Set(
+//     product.images.map((img: ProductImage) => img.id)
+//   );
+
+//   const newImageIds = new Set(
+//     updatedData.images?.map((img: ProductImage) => img.id) || []
+//   );
+
+//   const imagesToDelete = Array.from(oldImageIds).filter(
+//     (id) => !newImageIds.has(id as string)
+//   );
+
+//   for (const id of imagesToDelete) {
+//     try {
+//       await cloudinary.v2.uploader.destroy(id as string);
+//     } catch (error) {
+//       console.error(`Failed to delete image ${id} from Cloudinary:`, error);
+//     }
+//   }
+
+//   await Product.findByIdAndUpdate(productId, updatedData, { new: true });
+//   revalidatePath("/admin");
+//   return { success: true, message: "Product updated successfully." };
+// }
+
 export async function deleteProduct(productId: Types.ObjectId) {
   await connectDB();
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  const product = await Product.findById(productId);
-  if (!product) throw new Error("Product not found");
+  try {
+    const product = await Product.findById(productId).session(session);
+    if (!product) throw new Error("Product not found");
 
-  if (Array.isArray(product.images)) {
-    for (const img of product.images) {
-      if (img.id) {
-        await cloudinary.v2.uploader.destroy(img.id);
+    const variantId = product.variantId?.toString();
+
+    // Delete images from Cloudinary
+    if (Array.isArray(product.images)) {
+      for (const img of product.images) {
+        if (img.id) {
+          await cloudinary.v2.uploader.destroy(img.id);
+        }
       }
     }
+
+    // Delete the product
+    await Product.findByIdAndDelete(productId).session(session);
+
+    // Handle variant cleanup
+    if (variantId) {
+      const variant = await Variant.findById(variantId).session(session);
+      if (variant) {
+        // Remove the product from the variant
+        variant.variants = variant.variants.filter(
+          (v: any) => v.productId.toString() !== productId.toString()
+        );
+
+        // If variant has no products left or only one product left, delete the variant
+        if (variant.variants.length <= 1) {
+          await Variant.findByIdAndDelete(variantId).session(session);
+        } else {
+          await variant.save({ session });
+        }
+      }
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    revalidatePath("/admin");
+
+    return {
+      success: true,
+      message: "Product and images deleted successfully.",
+    };
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
-
-  await Product.findByIdAndDelete(productId);
-
-  revalidatePath("/admin/products");
-
-  return { success: true, message: "Product and images deleted successfully." };
 }
 
 export async function updateProduct(
-  productId: Types.ObjectId,
+  productId: Types.ObjectId | string,
   updatedData: {
     name?: string;
     description?: string;
@@ -430,40 +539,113 @@ export async function updateProduct(
     variantId?: Types.ObjectId | string;
     colorCode?: string;
     colorName?: string;
+    variantName?: string;
+    isVariant?: string;
+    newVariantId?: string;
   }
 ) {
   await connectDB();
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  const product = await Product.findById(productId);
-  if (!product) throw new Error("Product not found");
+  try {
+    const product = await Product.findById(productId).session(session);
+    if (!product) throw new Error("Product not found");
 
-  if (updatedData.name && updatedData.name !== product.name) {
-    updatedData.slug = slugify(updatedData.name.toLowerCase(), "-");
-  }
+    const oldVariantId = product.variantId?.toString();
 
-  const oldImageIds = new Set(
-    product.images.map((img: ProductImage) => img.id)
-  );
-
-  const newImageIds = new Set(
-    updatedData.images?.map((img: ProductImage) => img.id) || []
-  );
-
-  const imagesToDelete = Array.from(oldImageIds).filter(
-    (id) => !newImageIds.has(id as string)
-  );
-
-  for (const id of imagesToDelete) {
-    try {
-      await cloudinary.v2.uploader.destroy(id as string);
-    } catch (error) {
-      console.error(`Failed to delete image ${id} from Cloudinary:`, error);
+    // Handle name and slug update
+    if (updatedData.name && updatedData.name !== product.name) {
+      updatedData.slug = slugify(updatedData.name.toLowerCase(), "-");
     }
-  }
 
-  await Product.findByIdAndUpdate(productId, updatedData, { new: true });
-  revalidatePath("/admin");
-  return { success: true, message: "Product updated successfully." };
+    // Handle image deletions from Cloudinary if images are removed from the list
+    const oldImageIds = new Set(
+      product.images.map((img: ProductImage) => img.id)
+    );
+
+    const newImageIds = new Set(
+      updatedData.images?.map((img: ProductImage) => img.id) || []
+    );
+
+    const imagesToDelete = Array.from(oldImageIds).filter(
+      (id) => !newImageIds.has(id as string)
+    );
+
+    for (const id of imagesToDelete) {
+      try {
+        await cloudinary.v2.uploader.destroy(id as string);
+      } catch (error) {
+        console.error(`Failed to delete image ${id} from Cloudinary:`, error);
+      }
+    }
+
+    // Handle variant changes
+    let finalVariantId = oldVariantId;
+
+    console.log(updatedData.isVariant, updatedData.variantName);
+
+    if (updatedData.isVariant === "true" && updatedData.newVariantId) {
+      // Moving to existing variant
+      finalVariantId = updatedData.newVariantId;
+
+      // Add product to new variant
+      await addProductToVariant(
+        updatedData.newVariantId,
+        productId.toString(),
+        updatedData.colorCode || product.colorCode,
+        updatedData.colorName || product.colorName
+      );
+
+      // Remove from old variant and check if it should be deleted
+      if (oldVariantId && oldVariantId !== updatedData.newVariantId) {
+        await removeProductFromVariant(oldVariantId, productId.toString());
+      }
+    } else if (updatedData.variantName && oldVariantId) {
+      // Update existing variant name
+      await updateVariantName(oldVariantId, updatedData.variantName);
+    } else if (updatedData.isVariant === "false") {
+      // Creating new variant
+      const newVariant = await createVariant(
+        updatedData.variantName || product.name,
+        productId.toString(),
+        updatedData.colorCode || product.colorCode,
+        updatedData.colorName || product.colorName
+      );
+      finalVariantId = newVariant.id;
+
+      // Remove from old variant
+      if (oldVariantId) {
+        await removeProductFromVariant(oldVariantId, productId.toString());
+      }
+    }
+
+    // Update the product
+    const productUpdateData = {
+      ...updatedData,
+      variantId: finalVariantId,
+    };
+
+    // Remove fields that shouldn't be in the product update
+    delete productUpdateData.isVariant;
+    delete productUpdateData.newVariantId;
+    delete productUpdateData.variantName;
+
+    await Product.findByIdAndUpdate(productId, productUpdateData, {
+      new: true,
+      session,
+    });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    revalidatePath("/admin");
+    return { success: true, message: "Product updated successfully." };
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
 }
 
 export async function createContact(contactData: FormData) {

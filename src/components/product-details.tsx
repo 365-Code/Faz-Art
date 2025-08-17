@@ -232,9 +232,8 @@ const ProductVariants = ({
 
       <div className="flex space-x-4 h-8">
         {product.variantId.variants.map((variant) => (
-          <Link href={"/products/" + variant.productId}>
+          <Link key={variant.productId} href={"/products/" + variant.productId}>
             <Button
-              key={variant.colorName}
               className={`group relative h-12 w-12 rounded-full border-2 transition-all duration-300 hover:scale-110 hover:shadow-lg ${
                 product.id.toString() === variant.productId
                   ? "border-gray-900 shadow-lg scale-110"

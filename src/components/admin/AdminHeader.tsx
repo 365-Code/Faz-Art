@@ -308,8 +308,6 @@ const AddProduct = () => {
         formData.append("images", JSON.stringify(img))
       })
 
-      console.log(isVariant);
-      
       await addProduct(formData)
       toast.success("Product added successfully!")
       setIsAddProductOpen(false)

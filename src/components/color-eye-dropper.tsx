@@ -1,48 +1,59 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useCallback, useState, useEffect } from "react"
-import useEyeDropper from "use-eye-dropper"
-import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
-import { PipetteIcon, AlertCircleIcon } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import type React from "react";
+import { useCallback, useState, useEffect } from "react";
+import useEyeDropper from "use-eye-dropper";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import { PipetteIcon, AlertCircleIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "./ui/input";
 
 type DropperError = {
-  message: string
-  canceled?: boolean
-}
+  message: string;
+  canceled?: boolean;
+};
 
-const isError = <T,>(err: DropperError | T): err is DropperError => !!err && err instanceof Error && !!err.message
+const isError = <T,>(err: DropperError | T): err is DropperError =>
+  !!err && err instanceof Error && !!err.message;
 
-const isNotCanceled = <T,>(err: DropperError | T): err is DropperError => isError(err) && !err.canceled
+const isNotCanceled = <T,>(err: DropperError | T): err is DropperError =>
+  isError(err) && !err.canceled;
 
 interface ColorEyeDropperProps {
-  onColorChange: (color: string) => void
-  selectedColor?: string
+  onColorChange: (color: string) => void;
+  selectedColor?: string;
 }
 
-const ColorEyeDropper: React.FC<ColorEyeDropperProps> = ({ onColorChange, selectedColor = "#ffffff" }) => {
-  const { open, isSupported } = useEyeDropper()
-  const [color, setColor] = useState<string>(selectedColor)
-  const [error, setError] = useState<DropperError>()
+const ColorEyeDropper: React.FC<ColorEyeDropperProps> = ({
+  onColorChange,
+  selectedColor = "#ffffff",
+}) => {
+  const { open, isSupported } = useEyeDropper();
+  const [color, setColor] = useState<string>(selectedColor);
+  const [error, setError] = useState<DropperError>();
 
   useEffect(() => {
-    setColor(selectedColor)
-  }, [selectedColor])
+    setColor(selectedColor);
+  }, [selectedColor]);
 
   const pickColor = useCallback(async () => {
     try {
-      const result = await open()
-      setColor(result.sRGBHex)
-      onColorChange(result.sRGBHex)
-      setError(undefined)
+      const result = await open();
+      setColor(result.sRGBHex);
+      onColorChange(result.sRGBHex);
+      setError(undefined);
     } catch (e) {
       if (isNotCanceled(e)) {
-        setError(e)
+        setError(e);
       }
     }
-  }, [open, onColorChange])
+  }, [open, onColorChange]);
 
   return (
     <TooltipProvider>
@@ -51,7 +62,12 @@ const ColorEyeDropper: React.FC<ColorEyeDropperProps> = ({ onColorChange, select
           <div className="flex items-center gap-3">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" onClick={pickColor} type="button">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={pickColor}
+                  type="button"
+                >
                   <PipetteIcon className="h-4 w-4" />
                   <span className="sr-only">Pick a color</span>
                 </Button>
@@ -62,8 +78,19 @@ const ColorEyeDropper: React.FC<ColorEyeDropperProps> = ({ onColorChange, select
             </Tooltip>
 
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: color }} />
-              <Badge variant="outline">{color}</Badge>
+              <div
+                className="w-6 h-6 rounded border border-border"
+                style={{ backgroundColor: color }}
+              />
+              {/* <Badge variant="outline"> */}
+              <Input
+                type="text"
+                value={color}
+                onChange={(e) => onColorChange(e.target.value)}
+                className="w-[100px]"
+              />
+              {/* {color} */}
+              {/* </Badge> */}
             </div>
           </div>
         ) : (
@@ -81,7 +108,7 @@ const ColorEyeDropper: React.FC<ColorEyeDropperProps> = ({ onColorChange, select
         )}
       </div>
     </TooltipProvider>
-  )
-}
+  );
+};
 
-export default ColorEyeDropper
+export default ColorEyeDropper;
