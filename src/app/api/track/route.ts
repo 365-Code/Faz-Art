@@ -26,7 +26,7 @@ export async function GET(req: Request) {
 
   if (!visitorId) {
     // check if we already have a visitor with same fingerprint in last 24h
-    let existing = await Visitor.findOne({
+    const existing = await Visitor.findOne({
       visitorId: { $regex: `^fp-` }, // fingerprint-based IDs
       lastSeen: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
     }).where("visitorId").equals(`fp-${fingerprint}`);

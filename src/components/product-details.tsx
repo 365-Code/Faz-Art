@@ -16,8 +16,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import type { ProductType, ProductVariantType, VariantType } from "@/lib/types";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import type { ProductType } from "@/lib/types";
 import { Separator } from "./ui/separator";
 
 export default function ProductDetailsClient({
@@ -155,56 +154,35 @@ export default function ProductDetailsClient({
               <ProductVariants product={product} />
             </div>
 
-            <div>
-              {/* tabs */}
-              <Tabs defaultValue="info">
-                <TabsList className="w-full">
-                  <TabsTrigger value="info">Info</TabsTrigger>
-                  <TabsTrigger value="size">Size</TabsTrigger>
-                </TabsList>
-                <TabsContent value="info">{product.description}</TabsContent>
-                <TabsContent value="size">
-                  <div className="grid grid-cols-2">
-                    <div>
-                      <div>
-                        <span>Height: xyz</span>
-                      </div>
-                      <div>
-                        <span>Width: xyz</span>
-                      </div>
-                    </div>
-                    <div>
-                      <div>
-                        <span>Depth: xyz</span>
-                      </div>
-                      <div>
-                        <span>Diameter: xyz</span>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              {/* Add to Cart / Call to Action (Placeholder) */}
-              <div className="space-y-6 pt-8">
-                <div className="h-px bg-gradient-to-r from-border to-transparent" />
-                <Link
-                  href={`https://wa.me/11234567890?text=I%20am%20interested%20in%20the%20${product.name}%20product.`} // Replace with actual WhatsApp number
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button size="lg" className="w-full text-lg py-6">
-                    Inquire About Product
-                  </Button>
-                </Link>
-                {/* <Button
+            {/* Add to Cart / Call to Action (Placeholder) */}
+            <div className="space-y-6 pt-8">
+              {/* Section Heading */}
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-semibold tracking-tight">
+                  Interested in this product?
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Our team is here to answer your questions and help you with
+                  customizations.
+                </p>
+              </div>
+              <div className="h-px bg-gradient-to-r from-border to-transparent" />
+              <Link
+                href={`https://wa.me/11234567890?text=I%20am%20interested%20in%20the%20${product.name}%20product.`} // Replace with actual WhatsApp number
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button size="lg" className="w-full text-lg py-6">
+                  Inquire About Product
+                </Button>
+              </Link>
+              {/* <Button
                 variant="outline"
                 size="lg"
                 className="w-full text-lg py-6 bg-transparent"
               >
                 Schedule a Consultation
               </Button> */}
-              </div>
             </div>
           </div>
         </div>
@@ -213,13 +191,7 @@ export default function ProductDetailsClient({
   );
 }
 
-const ProductVariants = ({
-  product,
-}: // productVariants,
-{
-  product: ProductType;
-  // productVariants: ProductVariantType[];
-}) => {
+const ProductVariants = ({ product }: { product: ProductType }) => {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -227,7 +199,9 @@ const ProductVariants = ({
           Color
         </h3>
 
-        <p className="text-base text-gray-600 font-light">{"Silver"}</p>
+        <p className="text-base text-gray-600 font-light">
+          {product.colorName}
+        </p>
       </div>
 
       <div className="flex space-x-4 h-8">

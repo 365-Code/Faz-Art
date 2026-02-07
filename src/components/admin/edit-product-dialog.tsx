@@ -40,16 +40,24 @@ interface EditProductDialogProps {
   categories: CategoryType[];
 }
 
+interface UpdateProductPayload {
+  name: string;
+  description: string;
+  categoryId: string;
+  images: ProductImage[];
+  colorCode: string;
+  colorName: string;
+  isVariant: "true" | "false"; // keep it consistent with your current usage
+  newVariantId?: string;
+  variantName?: string;
+}
+
 export function EditProductDialog({
   isOpen,
   onOpenChange,
   product,
   categories,
 }: EditProductDialogProps) {
-
-  console.log("Product Detail = ", product);
-  
-
   const [name, setName] = useState(product?.name || "");
   const [description, setDescription] = useState(product?.description || "");
   const [selectedCategory, setSelectedCategory] = useState(
@@ -193,14 +201,27 @@ export function EditProductDialog({
 
       const allImages = [...existingImages, ...uploadedNewImages];
 
-      const updatedData: any = {
+      // const updatedData: any = {
+      //   name,
+      //   description,
+      //   categoryId: selectedCategory,
+      //   images: allImages,
+      //   colorCode,
+      //   colorName,
+      //   isVariant,
+      // };
+
+      const updatedData: UpdateProductPayload = {
         name,
         description,
-        categoryId: selectedCategory,
+        categoryId: selectedCategory.toString(),
         images: allImages,
         colorCode,
         colorName,
-        isVariant,
+        isVariant: isVariant == "true" ? "true" : "false",
+        ...(isVariant === "true"
+          ? { newVariantId: selectedVariant }
+          : { variantName: variantName || name }),
       };
 
       if (isVariant === "true") {

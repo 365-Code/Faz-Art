@@ -11,7 +11,6 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { PipetteIcon, AlertCircleIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "./ui/input";
 
 type DropperError = {

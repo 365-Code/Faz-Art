@@ -84,7 +84,7 @@ export function Header() {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-border/50 bg-background/95 glass-effect">
+        <div className="md:hidden border-t border-border/50 bg-background/95 glass-effect absolute h-screen w-full">
           <nav className="container flex flex-col space-y-4 px-4 py-6">
             <Link
               href="/"

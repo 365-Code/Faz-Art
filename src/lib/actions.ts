@@ -9,7 +9,7 @@ import type {
   ProductType,
   VariantType,
 } from "./types";
-import mongoose, { Types, startSession } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import cloudinary from "cloudinary";
 import { revalidatePath } from "next/cache";
 import { limit } from "./constant";
@@ -21,14 +21,14 @@ cloudinary.v2.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-const mapToProduct = (product: any): ProductType => {
+const mapToProduct = (product: ProductType): ProductType => {
   return {
-    id: product.id || product._id?.toString(),
+    id: product.id,
     name: product.name,
     slug: product.slug,
     categoryId: {
-      id: product.categoryId?.id || product.categoryId?._id?.toString(),
-      name: product.categoryId?.name,
+      id: product.categoryId.id,
+      name: product.categoryId.name,
     },
     variantId: product.variantId,
     colorCode: product.colorCode,
@@ -38,9 +38,9 @@ const mapToProduct = (product: any): ProductType => {
   };
 };
 
-const mapToCategory = (category: any): CategoryType => {
+const mapToCategory = (category: CategoryType): CategoryType => {
   return {
-    id: category.id || category._id?.toString(),
+    id: category.id,
     name: category.name,
     slug: category.slug,
     image: category.image,
@@ -48,9 +48,11 @@ const mapToCategory = (category: any): CategoryType => {
   };
 };
 
-const mapToVariant = (variant: any): VariantType => {
+
+
+const mapToVariant = (variant: VariantType): VariantType => {
   return {
-    id: variant.id || variant._id?.toString(),
+    id: variant.id,
     name: variant.name,
     variants: variant.variants || [],
   };
@@ -71,7 +73,7 @@ export async function fetchCategories(
     .skip(page && page > 1 ? (page - 1) * limit : 0);
 
   const totalCount = Number(await Category.countDocuments());
-  const ctgs = JSON.parse(JSON.stringify(categories)) as any[];
+  const ctgs = JSON.parse(JSON.stringify(categories)) as CategoryType[];
 
   return {
     totalCount,
@@ -182,7 +184,7 @@ export async function updateCategory(
 export async function fetchVariants(): Promise<VariantType[]> {
   await connectDB();
   const variants = await Variant.find({});
-  const variantsData = JSON.parse(JSON.stringify(variants)) as any[];
+  const variantsData = JSON.parse(JSON.stringify(variants)) as VariantType[];
   return variantsData.map((variant) => mapToVariant(variant));
 }
 
@@ -252,7 +254,7 @@ export async function removeProductFromVariant(
 
   // Remove the product from the variant
   variant.variants = variant.variants.filter(
-    (v: any) => v.productId.toString() !== productId
+    (v) => v.productId.toString() !== productId
   );
 
   // If variant has only one product left, delete the variant
@@ -263,6 +265,30 @@ export async function removeProductFromVariant(
     await variant.save();
     return { deleted: false, variant: JSON.parse(JSON.stringify(variant)) };
   }
+}
+
+export async function updateProductColorInVariant(
+  variantId: string,
+  productId: string,
+  colorCode: string,
+  colorName: string
+) {
+  await connectDB();
+
+  const variant = await Variant.findById(variantId);
+  if (!variant) throw new Error("Variant not found");
+
+  // Find and update the specific product's color in the variant
+  const productVariant = variant.variants.find(
+    (v) => v.productId.toString() === productId.toString()
+  );
+  if (productVariant) {
+    productVariant.colorCode = colorCode;
+    productVariant.colorName = colorName;
+    await variant.save();
+  }
+
+  return JSON.parse(JSON.stringify(variant));
 }
 
 // Products
@@ -277,7 +303,7 @@ export async function fetchProducts(
     .populate("variantId", "id name");
 
   const totalCount = Number(await Product.countDocuments());
-  const prods = JSON.parse(JSON.stringify(products)) as any[];
+  const prods = JSON.parse(JSON.stringify(products)) as ProductType[];
 
   return {
     totalCount,
@@ -375,7 +401,7 @@ export async function addProduct(productData: FormData) {
     finalVariantId = new Types.ObjectId(newVariant.id);
   }
 
-  const productPayload: any = {
+  const productPayload = {
     name,
     images,
     slug,
@@ -402,74 +428,6 @@ export async function addProduct(productData: FormData) {
 
   return JSON.parse(JSON.stringify(product));
 }
-
-// export async function deleteProduct(productId: Types.ObjectId) {
-//   await connectDB();
-
-//   const product = await Product.findById(productId);
-//   if (!product) throw new Error("Product not found");
-
-//   if (Array.isArray(product.images)) {
-//     for (const img of product.images) {
-//       if (img.id) {
-//         await cloudinary.v2.uploader.destroy(img.id);
-//       }
-//     }
-//   }
-
-//   await Product.findByIdAndDelete(productId);
-
-//   revalidatePath("/admin/products");
-
-//   return { success: true, message: "Product and images deleted successfully." };
-// }
-
-// export async function updateProduct(
-//   productId: Types.ObjectId,
-//   updatedData: {
-//     name?: string;
-//     description?: string;
-//     slug?: string;
-//     categoryId?: Types.ObjectId | string;
-//     images?: ProductImage[];
-//     variantId?: Types.ObjectId | string;
-//     colorCode?: string;
-//     colorName?: string;
-//   }
-// ) {
-//   await connectDB();
-
-//   const product = await Product.findById(productId);
-//   if (!product) throw new Error("Product not found");
-
-//   if (updatedData.name && updatedData.name !== product.name) {
-//     updatedData.slug = slugify(updatedData.name.toLowerCase(), "-");
-//   }
-
-//   const oldImageIds = new Set(
-//     product.images.map((img: ProductImage) => img.id)
-//   );
-
-//   const newImageIds = new Set(
-//     updatedData.images?.map((img: ProductImage) => img.id) || []
-//   );
-
-//   const imagesToDelete = Array.from(oldImageIds).filter(
-//     (id) => !newImageIds.has(id as string)
-//   );
-
-//   for (const id of imagesToDelete) {
-//     try {
-//       await cloudinary.v2.uploader.destroy(id as string);
-//     } catch (error) {
-//       console.error(`Failed to delete image ${id} from Cloudinary:`, error);
-//     }
-//   }
-
-//   await Product.findByIdAndUpdate(productId, updatedData, { new: true });
-//   revalidatePath("/admin");
-//   return { success: true, message: "Product updated successfully." };
-// }
 
 export async function deleteProduct(productId: Types.ObjectId) {
   await connectDB();
@@ -500,7 +458,7 @@ export async function deleteProduct(productId: Types.ObjectId) {
       if (variant) {
         // Remove the product from the variant
         variant.variants = variant.variants.filter(
-          (v: any) => v.productId.toString() !== productId.toString()
+          (v) => v.productId.toString() !== productId.toString()
         );
 
         // If variant has no products left or only one product left, delete the variant
@@ -583,8 +541,6 @@ export async function updateProduct(
     // Handle variant changes
     let finalVariantId = oldVariantId;
 
-    console.log(updatedData.isVariant, updatedData.variantName);
-
     if (updatedData.isVariant === "true" && updatedData.newVariantId) {
       // Moving to existing variant
       finalVariantId = updatedData.newVariantId;
@@ -604,6 +560,20 @@ export async function updateProduct(
     } else if (updatedData.variantName && oldVariantId) {
       // Update existing variant name
       await updateVariantName(oldVariantId, updatedData.variantName);
+
+      // Update color information in variant if color changed
+      if (
+        oldVariantId &&
+        (updatedData.colorCode !== product.colorCode ||
+          updatedData.colorName !== product.colorName)
+      ) {
+        await updateProductColorInVariant(
+          oldVariantId,
+          productId.toString(),
+          updatedData.colorCode || product.colorCode,
+          updatedData.colorName || product.colorName
+        );
+      }
     } else if (updatedData.isVariant === "false") {
       // Creating new variant
       const newVariant = await createVariant(
