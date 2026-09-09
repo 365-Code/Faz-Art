@@ -23,7 +23,7 @@ export function Collections() {
           {categories.map((collection) => (
             <Link
               key={collection.id}
-              href={`/collections/${collection.id}`}
+              href={`/collections/${collection.slug}`}
               className="group block"
             >
               <div className="relative h-[300px] md:h-[400px] rounded-3xl overflow-hidden bg-card border border-border/50 hover:border-border transition-all duration-500 hover:shadow-2xl hover:shadow-black/5 dark:hover:shadow-black/20">

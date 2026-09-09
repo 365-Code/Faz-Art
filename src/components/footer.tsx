@@ -9,7 +9,7 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-800 dark:to-amber-900" />
-              <span className="font-display text-2xl font-bold">MineArt</span>
+              <span className="font-display text-2xl font-bold">Artisan Gallery</span>
             </div>
             <p className="text-muted-foreground leading-relaxed">
               Crafting timeless elegance with premium marble collections for discerning clients worldwide.
@@ -96,14 +96,14 @@ export function Footer() {
               <p>123 Marble Avenue</p>
               <p>Luxury District, LD 12345</p>
               <p>Phone: +1 (555) 123-4567</p>
-              <p>Email: info@mineart.com</p>
+              <p>Email: info@artisangallery.com</p>
             </div>
           </div>
         </div>
 
         <div className="border-t mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center">
           <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} MineArt. All rights reserved.
+            © {new Date().getFullYear()} Artisan Gallery. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 sm:mt-0">
             <Link href="/privacy" className="text-muted-foreground hover:text-primary text-sm transition-colors">

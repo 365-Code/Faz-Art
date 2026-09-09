@@ -20,7 +20,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MineArt - Premium Marble Collections",
+  title: "Artisan Gallery - Premium Marble Collections",
   description:
     "Discover our exquisite collection of premium marble products, from decorative items to architectural elements.",
 };

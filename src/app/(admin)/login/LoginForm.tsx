@@ -147,7 +147,7 @@ const SubmitButton = () => {
   return (
     <Button
       type="submit"
-      className="w-full h-12 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+      className="w-full h-12  text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200"
       disabled={pending}
     >
       {pending ? (

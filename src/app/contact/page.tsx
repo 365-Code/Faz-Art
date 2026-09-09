@@ -26,7 +26,7 @@ export default function ContactPage() {
     {
       icon: Mail,
       title: "Email Us",
-      details: ["info@mineart.com", "sales@mineart.com", "support@mineart.com"],
+      details: ["info@artisangallery.com", "sales@artisangallery.com", "support@artisangallery.com"],
     },
     {
       icon: Clock,

@@ -8,7 +8,7 @@ import { CategoryType } from "@/lib/types";
 
 export default function CategoryCard({ category }: { category: CategoryType }) {
   return (
-    <Link href={`/collections/${category.id}`} className="group block">
+    <Link href={`/collections/${category.slug}`} className="group block">
       <Card className="relative h-80 overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-700 transform hover:scale-[1.02] bg-card p-0">
         {/* Background Image */}
         <div className="relative w-full h-full overflow-hidden">

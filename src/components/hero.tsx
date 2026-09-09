@@ -18,7 +18,7 @@ export function Hero() {
       <div className="relative z-10 container px-4 text-center">
         <div className="max-w-4xl mx-auto space-y-8">
           <h1 className="font-heading text-6xl md:text-8xl font-bold tracking-tight">
-            MineArt
+            Artisan Gallery
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto font-light">
             Discover timeless elegance with our curated collection of premium

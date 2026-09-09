@@ -23,7 +23,7 @@ export function Header() {
             alt="logo.jpg"
             className="rounded-full"
           />
-          <span className="font-heading text-xl font-bold">MineArt</span>
+          <span className="font-heading text-xl font-bold">Artisan Gallery</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -57,7 +57,7 @@ export function Header() {
         <div className="flex items-center space-x-4">
           <ModeToggle />
           <Link
-            href="https://wa.me/1234567890?text=Hi%2C%20I'm%20interested%20in%20getting%20a%20quote%20for%20your%20services."
+            href="https://wa.me/+917852057102?text=Hi%2C%20I'm%20interested%20in%20getting%20a%20quote%20for%20your%20services."
             target="_blank"
             rel="noopener noreferrer"
           >

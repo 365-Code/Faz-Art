@@ -21,11 +21,12 @@ export type ProductType = {
   categoryId: {
     name: string;
     id: mongoose.Types.ObjectId;
+    slug: string;
   };
   variantId: {
     id: string;
     name: string;
-    variants: ProductVariantType[]
+    variants: ProductVariantType[];
   };
   colorCode: string;
   colorName: string;

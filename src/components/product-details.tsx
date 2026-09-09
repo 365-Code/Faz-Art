@@ -54,7 +54,7 @@ export default function ProductDetailsClient({
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href={`/collections/${product.categoryId.id}`}>
+                  <Link href={`/collections/${product.categoryId.slug}`}>
                     {product.categoryId.name}
                   </Link>
                 </BreadcrumbLink>

@@ -43,7 +43,7 @@ export default function AboutPage() {
           <div className="max-w-4xl mx-auto text-center space-y-6">
             <h1 className="font-heading text-5xl md:text-6xl font-bold tracking-tight">
               <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                About MineArt
+                About Artisan Gallery
               </span>
             </h1>
             <p className="text-xl text-muted-foreground font-light leading-relaxed">

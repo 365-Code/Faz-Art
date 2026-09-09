@@ -29,6 +29,7 @@ const mapToProduct = (product: ProductType): ProductType => {
     categoryId: {
       id: product.categoryId.id,
       name: product.categoryId.name,
+      slug: product.categoryId.name,
     },
     variantId: product.variantId,
     colorCode: product.colorCode,
@@ -48,8 +49,6 @@ const mapToCategory = (category: CategoryType): CategoryType => {
   };
 };
 
-
-
 const mapToVariant = (variant: VariantType): VariantType => {
   return {
     id: variant.id,
@@ -65,7 +64,7 @@ export async function fetchCategoriesCount(): Promise<number> {
 }
 
 export async function fetchCategories(
-  page?: number | 0
+  page?: number | 0,
 ): Promise<{ totalCount: number; categories: CategoryType[] }> {
   await connectDB();
   const categories = await Category.find({})
@@ -82,10 +81,19 @@ export async function fetchCategories(
 }
 
 export async function fetchCategory(
-  categoryId: Types.ObjectId
+  categoryId: Types.ObjectId,
 ): Promise<CategoryType> {
   await connectDB();
   const category = await Category.findById(categoryId);
+  return JSON.parse(JSON.stringify(category));
+}
+
+export async function fetchCategoryBySlug(
+  categorySlug: string,
+): Promise<CategoryType> {
+  await connectDB();
+  // const category = await Category.findById({ slug: categorySlug });
+  const category = await Category.findOne({ slug: categorySlug });
   return JSON.parse(JSON.stringify(category));
 }
 
@@ -158,7 +166,7 @@ export async function updateCategory(
     name: string;
     description: string;
     image?: { id: string; url: string };
-  }
+  },
 ) {
   await connectDB();
 
@@ -192,7 +200,7 @@ export async function createVariant(
   name: string,
   productId: string,
   colorCode: string,
-  colorName: string
+  colorName: string,
 ): Promise<VariantType> {
   await connectDB();
 
@@ -214,7 +222,7 @@ export async function addProductToVariant(
   variantId: string,
   productId: string,
   colorCode: string,
-  colorName: string
+  colorName: string,
 ) {
   await connectDB();
 
@@ -245,7 +253,7 @@ export async function updateVariantName(variantId: string, newName: string) {
 
 export async function removeProductFromVariant(
   variantId: string,
-  productId: string
+  productId: string,
 ) {
   await connectDB();
 
@@ -254,7 +262,7 @@ export async function removeProductFromVariant(
 
   // Remove the product from the variant
   variant.variants = variant.variants.filter(
-    (v) => v.productId.toString() !== productId
+    (v) => v.productId.toString() !== productId,
   );
 
   // If variant has only one product left, delete the variant
@@ -271,7 +279,7 @@ export async function updateProductColorInVariant(
   variantId: string,
   productId: string,
   colorCode: string,
-  colorName: string
+  colorName: string,
 ) {
   await connectDB();
 
@@ -280,7 +288,7 @@ export async function updateProductColorInVariant(
 
   // Find and update the specific product's color in the variant
   const productVariant = variant.variants.find(
-    (v) => v.productId.toString() === productId.toString()
+    (v) => v.productId.toString() === productId.toString(),
   );
   if (productVariant) {
     productVariant.colorCode = colorCode;
@@ -293,7 +301,7 @@ export async function updateProductColorInVariant(
 
 // Products
 export async function fetchProducts(
-  page?: number | 0
+  page?: number | 0,
 ): Promise<{ totalCount: number; products: ProductType[] }> {
   await connectDB();
   const products = await Product.find({})
@@ -319,7 +327,7 @@ export async function fetchProductsCount(): Promise<number> {
 
 export async function fetchByCategory(
   categoryId: Types.ObjectId,
-  page?: number | 0
+  page?: number | 0,
 ): Promise<{ totalCount: number; products: ProductType[] }> {
   await connectDB();
   const products = await Product.find({ categoryId })
@@ -329,7 +337,7 @@ export async function fetchByCategory(
     .populate("variantId");
 
   const totalCount = Number(
-    await Product.findOne({ categoryId }).countDocuments()
+    await Product.findOne({ categoryId }).countDocuments(),
   );
 
   return {
@@ -339,13 +347,23 @@ export async function fetchByCategory(
 }
 
 export async function fetchProduct(
-  productId: Types.ObjectId
+  productId: Types.ObjectId,
 ): Promise<ProductType> {
   await connectDB();
   const product = await Product.findById(productId)
     .populate("categoryId", "id name")
     .populate("variantId", "id name variants");
 
+  return JSON.parse(JSON.stringify(product));
+}
+
+export async function fetchProductBySlug(
+  productSlug: string,
+): Promise<ProductType> {
+  await connectDB();
+  const product = await Product.findOne({ slug: productSlug })
+    .populate("categoryId", "id name slug")
+    .populate("variantId", "id name variants");
   return JSON.parse(JSON.stringify(product));
 }
 
@@ -396,7 +414,7 @@ export async function addProduct(productData: FormData) {
       name,
       uuidv4(),
       colorCode,
-      colorName
+      colorName,
     );
     finalVariantId = new Types.ObjectId(newVariant.id);
   }
@@ -458,7 +476,7 @@ export async function deleteProduct(productId: Types.ObjectId) {
       if (variant) {
         // Remove the product from the variant
         variant.variants = variant.variants.filter(
-          (v) => v.productId.toString() !== productId.toString()
+          (v) => v.productId.toString() !== productId.toString(),
         );
 
         // If variant has no products left or only one product left, delete the variant
@@ -500,7 +518,7 @@ export async function updateProduct(
     variantName?: string;
     isVariant?: string;
     newVariantId?: string;
-  }
+  },
 ) {
   await connectDB();
   const session = await mongoose.startSession();
@@ -519,15 +537,15 @@ export async function updateProduct(
 
     // Handle image deletions from Cloudinary if images are removed from the list
     const oldImageIds = new Set(
-      product.images.map((img: ProductImage) => img.id)
+      product.images.map((img: ProductImage) => img.id),
     );
 
     const newImageIds = new Set(
-      updatedData.images?.map((img: ProductImage) => img.id) || []
+      updatedData.images?.map((img: ProductImage) => img.id) || [],
     );
 
     const imagesToDelete = Array.from(oldImageIds).filter(
-      (id) => !newImageIds.has(id as string)
+      (id) => !newImageIds.has(id as string),
     );
 
     for (const id of imagesToDelete) {
@@ -550,7 +568,7 @@ export async function updateProduct(
         updatedData.newVariantId,
         productId.toString(),
         updatedData.colorCode || product.colorCode,
-        updatedData.colorName || product.colorName
+        updatedData.colorName || product.colorName,
       );
 
       // Remove from old variant and check if it should be deleted
@@ -571,7 +589,7 @@ export async function updateProduct(
           oldVariantId,
           productId.toString(),
           updatedData.colorCode || product.colorCode,
-          updatedData.colorName || product.colorName
+          updatedData.colorName || product.colorName,
         );
       }
     } else if (updatedData.isVariant === "false") {
@@ -580,7 +598,7 @@ export async function updateProduct(
         updatedData.variantName || product.name,
         productId.toString(),
         updatedData.colorCode || product.colorCode,
-        updatedData.colorName || product.colorName
+        updatedData.colorName || product.colorName,
       );
       finalVariantId = newVariant.id;
 
@@ -642,7 +660,7 @@ export async function createContact(contactData: FormData) {
 }
 
 export async function getContacts(
-  page?: number | 0
+  page?: number | 0,
 ): Promise<{ totalCount: number; contacts: ContactType[] }> {
   await connectDB();
   const contacts = await Contact.find({})

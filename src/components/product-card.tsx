@@ -11,7 +11,7 @@ import { Badge } from "./ui/badge";
 
 export default function ProductCard({ product }: { product: ProductType }) {
   return (
-    <Link href={"/products/" + product.id}>
+    <Link href={"/products/" + product.slug}>
       <Card className="group/product group relative aspect-square mx-auto cursor-pointer overflow-hidden border-0 shadow-lg transition-shadow duration-300 hover:shadow-xl">
         {/* Background Image */}
         <Image
