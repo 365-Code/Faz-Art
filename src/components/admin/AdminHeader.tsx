@@ -32,7 +32,7 @@ const AdminHeader = () => {
             <h1 className="font-heading text-3xl font-bold">Admin Dashboard</h1>
             <p className="text-muted-foreground">Manage your marble collections and products</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <AddCategory />
             <AddProduct />
           </div>

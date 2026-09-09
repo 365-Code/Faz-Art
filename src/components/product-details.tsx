@@ -100,7 +100,7 @@ export default function ProductDetailsClient({
               </div>
 
               {/* Thumbnail Images */}
-              <div className="flex shrink-0 flex-row md:flex-col gap-4 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto no-scrollbar p-1">
+              <div className="flex shrink-0 flex-row md:max-h-[600px] md:flex-col gap-4 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto no-scrollbar p-1">
                 {product.images.map((image, i) => (
                   <Card
                     key={image.id}
