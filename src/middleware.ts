@@ -1,30 +1,31 @@
+import { decrypt } from "@/lib/session";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { decrypt } from "./lib/session";
 
 const publicRoutes = ["/login"];
-const protectedRoutes = [
-  "/admin",
-  // "/admin/dashboard",
-  // "/admin/products",
-  // "/admin/categories",
-];
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
+
   const isPublicRoute = publicRoutes.includes(pathname);
-  const isProtectedRoute = protectedRoutes.includes(pathname);
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+
   const cookie = req.cookies.get("session")?.value;
   const session = await decrypt(cookie);
-  if (isProtectedRoute && !session?.userId) {
-    return NextResponse.redirect(new URL("/login", req.nextUrl));
+
+  // Protect /admin and everything under /admin/*
+  if (isAdminRoute && !session?.userId) {
+    return NextResponse.redirect(new URL("/login", req.url));
   }
+
+  // Prevent logged-in users from visiting /login
   if (isPublicRoute && session?.userId) {
-    return NextResponse.redirect(new URL("/admin", req.nextUrl));
+    return NextResponse.redirect(new URL("/admin", req.url));
   }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin", "/login"],
+  matcher: ["/admin/:path*", "/login"],
 };

@@ -39,8 +39,10 @@ export async function decrypt(session: string | undefined = "") {
     const { payload } = await jwtVerify(session, encodedKey, {
       algorithms: [alg],
     });
+
     return payload;
   } catch (error) {
-    console.log("Failed to verify Session", error);
+    console.info("Failed to verify session:", error);
+    return null;
   }
 }
