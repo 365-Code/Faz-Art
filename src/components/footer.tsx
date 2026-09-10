@@ -93,9 +93,9 @@ export function Footer() {
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Contact</h3>
             <div className="space-y-2 text-muted-foreground">
-              <p>123 Marble Avenue</p>
-              <p>Luxury District, LD 12345</p>
-              <p>Phone: +1 (555) 123-4567</p>
+              <p>Artisan Galler, Taj Gali</p>
+              <p>Matabhar Road, Makrana 341505</p>
+              <p>Phone: +91 7852 057102</p>
               <p>Email: info@artisangallery.com</p>
             </div>
           </div>

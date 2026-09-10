@@ -168,7 +168,7 @@ export default function ProductDetailsClient({
               </div>
               <div className="h-px bg-gradient-to-r from-border to-transparent" />
               <Link
-                href={`https://wa.me/11234567890?text=I%20am%20interested%20in%20the%20${product.name}%20product.`} // Replace with actual WhatsApp number
+                href={`https://wa.me/+917852057102?text=I%20am%20interested%20in%20the%20${product.name}%20product.`} // Replace with actual WhatsApp number
                 target="_blank"
                 rel="noopener noreferrer"
               >
