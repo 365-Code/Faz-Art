@@ -26,6 +26,12 @@ export default async function CollectionPage({
   let currentPage = Number(page) || 1;
 
   const category = await fetchCategoryBySlug(id);
+
+  if(!category){
+    return notFound()
+  }
+
+
   const { products, totalCount } = await fetchByCategory(
     category.id,
     currentPage,

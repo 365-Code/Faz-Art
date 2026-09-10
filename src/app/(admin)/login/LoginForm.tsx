@@ -29,7 +29,7 @@ const LoginForm = () => {
           <div className="inline-flex items-center justify-center bg-gradient-to-br rounded-full mb-4 shadow-lg aspect-square w-20">
             <Image
               src="/logo.jpg"
-              alt="Makrana Premium"
+              alt="The Artisans Gallery"
               width={48}
               height={48}
               className="object-cover w-full h-full rounded-full"
@@ -38,7 +38,7 @@ const LoginForm = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Admin Portal
           </h1>
-          <p className="text-gray-600">Makrana Premium Management System</p>
+          <p className="text-gray-600">The Artisans Gallery Management System</p>
         </div>
 
         <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
@@ -124,7 +124,7 @@ const LoginForm = () => {
               <div className="flex items-center space-x-2">
                 <Gem className="w-4 h-4 text-amber-600" />
                 <p className="text-amber-800 text-sm">
-                  This is a secure admin area for Makrana Premium management.
+                  This is a secure admin area for The Artisans Gallery management.
                 </p>
               </div>
             </div>
@@ -133,7 +133,7 @@ const LoginForm = () => {
 
         {/* Footer */}
         <div className="text-center mt-8 text-gray-500 text-sm">
-          <p>© 2025 Makrana Premium. All rights reserved.</p>
+          <p>© 2025 The Artisans Gallery. All rights reserved.</p>
         </div>
       </div>
     </div>

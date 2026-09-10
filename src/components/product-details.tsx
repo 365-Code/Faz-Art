@@ -206,10 +206,13 @@ const ProductVariants = ({ product }: { product: ProductType }) => {
 
       <div className="flex space-x-4 h-8">
         {product.variantId.variants.map((variant) => (
-          <Link key={variant.productId} href={"/products/" + variant.productId}>
+          <Link
+            key={variant.productSlug}
+            href={"/products/" + variant.productSlug}
+          >
             <Button
               className={`group relative h-12 w-12 rounded-full border-2 transition-all duration-300 hover:scale-110 hover:shadow-lg ${
-                product.id.toString() === variant.productId
+                product.slug === variant.productSlug
                   ? "border-gray-900 shadow-lg scale-110"
                   : "border-gray-300 hover:border-gray-400"
               }`}
@@ -218,7 +221,7 @@ const ProductVariants = ({ product }: { product: ProductType }) => {
             >
               {/* Inner ring for selected state */}
 
-              {product.id.toString() === variant.productId && (
+              {product.slug === variant.productSlug && (
                 <div className="absolute inset-1 rounded-full border-2 border-white shadow-inner" />
               )}
 

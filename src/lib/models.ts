@@ -48,7 +48,8 @@ export interface IVisitor extends Document {
 export interface IVariant extends Document {
   name: string;
   variants: {
-    productId: string;
+    // productId: string;
+    productSlug: string;
     colorName: string;
     colorCode: string;
   }[];
@@ -75,7 +76,7 @@ const CategorySchema = new Schema<ICategory>(
         // delete ret.__v; // Remove Mongoose version key
       },
     },
-  }
+  },
 );
 
 // Product Schema
@@ -126,7 +127,7 @@ const ProductSchema = new Schema<IProduct>(
         // delete ret.__v;
       },
     },
-  }
+  },
 );
 
 const ContactSchema = new Schema<IContact>(
@@ -166,7 +167,7 @@ const ContactSchema = new Schema<IContact>(
         // delete ret.__v; // Remove Mongoose version key
       },
     },
-  }
+  },
 );
 
 const VisitorSchema = new Schema<IVisitor>({
@@ -183,7 +184,7 @@ const VariantSchema = new Schema<IVariant>(
     },
     variants: [
       {
-        productId: {
+        productSlug: {
           type: String,
           required: true,
         },
@@ -208,7 +209,7 @@ const VariantSchema = new Schema<IVariant>(
         // delete ret.__v; // Remove Mongoose version key
       },
     },
-  }
+  },
 );
 
 // Export models

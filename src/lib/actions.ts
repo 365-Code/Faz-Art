@@ -198,7 +198,7 @@ export async function fetchVariants(): Promise<VariantType[]> {
 
 export async function createVariant(
   name: string,
-  productId: string,
+  productSlug: string,
   colorCode: string,
   colorName: string,
 ): Promise<VariantType> {
@@ -208,7 +208,7 @@ export async function createVariant(
     name,
     variants: [
       {
-        productId,
+        productSlug,
         colorCode,
         colorName,
       },
@@ -220,7 +220,7 @@ export async function createVariant(
 
 export async function addProductToVariant(
   variantId: string,
-  productId: string,
+  productSlug: string,
   colorCode: string,
   colorName: string,
 ) {
@@ -230,7 +230,7 @@ export async function addProductToVariant(
   if (!variant) throw new Error("Variant not found");
 
   variant.variants.push({
-    productId,
+    productSlug,
     colorCode,
     colorName,
   });
@@ -253,7 +253,7 @@ export async function updateVariantName(variantId: string, newName: string) {
 
 export async function removeProductFromVariant(
   variantId: string,
-  productId: string,
+  productSlug: string,
 ) {
   await connectDB();
 
@@ -262,7 +262,7 @@ export async function removeProductFromVariant(
 
   // Remove the product from the variant
   variant.variants = variant.variants.filter(
-    (v) => v.productId.toString() !== productId,
+    (v) => v.productSlug !== productSlug,
   );
 
   // If variant has only one product left, delete the variant
@@ -277,7 +277,7 @@ export async function removeProductFromVariant(
 
 export async function updateProductColorInVariant(
   variantId: string,
-  productId: string,
+  productSlug: string,
   colorCode: string,
   colorName: string,
 ) {
@@ -288,8 +288,9 @@ export async function updateProductColorInVariant(
 
   // Find and update the specific product's color in the variant
   const productVariant = variant.variants.find(
-    (v) => v.productId.toString() === productId.toString(),
+    (v) => v.productSlug === productSlug,
   );
+
   if (productVariant) {
     productVariant.colorCode = colorCode;
     productVariant.colorName = colorName;
@@ -412,7 +413,8 @@ export async function addProduct(productData: FormData) {
 
     const newVariant = await createVariant(
       name,
-      uuidv4(),
+      // uuidv4(),
+      slug,
       colorCode,
       colorName,
     );
@@ -434,7 +436,7 @@ export async function addProduct(productData: FormData) {
 
   // Update the variant with the product ID
   if (isVariant === "true") {
-    await addProductToVariant(variantId, product.id, colorCode, colorName);
+    await addProductToVariant(variantId, product.slug, colorCode, colorName);
   } else {
     // Update the newly created variant with the actual product ID
     await Variant.findByIdAndUpdate(finalVariantId, {
@@ -476,7 +478,7 @@ export async function deleteProduct(productId: Types.ObjectId) {
       if (variant) {
         // Remove the product from the variant
         variant.variants = variant.variants.filter(
-          (v) => v.productId.toString() !== productId.toString(),
+          (v) => v.productSlug !== product.slug,
         );
 
         // If variant has no products left or only one product left, delete the variant
@@ -566,28 +568,31 @@ export async function updateProduct(
       // Add product to new variant
       await addProductToVariant(
         updatedData.newVariantId,
-        productId.toString(),
+        updatedData.slug || product.slug,
         updatedData.colorCode || product.colorCode,
         updatedData.colorName || product.colorName,
       );
 
       // Remove from old variant and check if it should be deleted
       if (oldVariantId && oldVariantId !== updatedData.newVariantId) {
-        await removeProductFromVariant(oldVariantId, productId.toString());
+        await removeProductFromVariant(oldVariantId, product.slug);
       }
     } else if (updatedData.variantName && oldVariantId) {
       // Update existing variant name
       await updateVariantName(oldVariantId, updatedData.variantName);
 
+      console.info(oldVariantId, updatedData.colorCode, updatedData.colorName, product.colorCode, product.colorName)
       // Update color information in variant if color changed
       if (
         oldVariantId &&
         (updatedData.colorCode !== product.colorCode ||
           updatedData.colorName !== product.colorName)
       ) {
+
+
         await updateProductColorInVariant(
           oldVariantId,
-          productId.toString(),
+          updatedData.slug || product.slug,
           updatedData.colorCode || product.colorCode,
           updatedData.colorName || product.colorName,
         );
@@ -596,7 +601,8 @@ export async function updateProduct(
       // Creating new variant
       const newVariant = await createVariant(
         updatedData.variantName || product.name,
-        productId.toString(),
+        // productId.toString(),
+        updatedData.slug || product.slug,
         updatedData.colorCode || product.colorCode,
         updatedData.colorName || product.colorName,
       );
@@ -604,7 +610,7 @@ export async function updateProduct(
 
       // Remove from old variant
       if (oldVariantId) {
-        await removeProductFromVariant(oldVariantId, productId.toString());
+        await removeProductFromVariant(oldVariantId, product.slug);
       }
     }
 

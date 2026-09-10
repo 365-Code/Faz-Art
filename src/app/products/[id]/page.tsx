@@ -2,6 +2,7 @@ import React from "react";
 import ProductDetails from "@/components/product-details";
 import { fetchProduct, fetchProductBySlug } from "@/lib/actions";
 import mongoose from "mongoose";
+import { notFound } from "next/navigation";
 
 const page = async ({
   params,
@@ -15,6 +16,9 @@ const page = async ({
 
   // const product = await fetchProduct(id);
   const product = await fetchProductBySlug(id)
+  if(!product){
+    return notFound()
+  }
 
   return <ProductDetails product={product} />;
 };

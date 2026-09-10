@@ -60,7 +60,7 @@ export type ContactType = {
 };
 
 export type ProductVariantType = {
-  productId: string;
+  productSlug: string;
   colorCode: string;
   colorName: string;
 };

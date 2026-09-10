@@ -93,7 +93,7 @@ export function Footer() {
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Contact</h3>
             <div className="space-y-2 text-muted-foreground">
-              <p>Artisan Galler, Taj Gali</p>
+              <p>Artisan Gallery, Taj Gali</p>
               <p>Matabhar Road, Makrana 341505</p>
               <p>Phone: +91 7852 057102</p>
               <p>Email: info@artisangallery.com</p>
