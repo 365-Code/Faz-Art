@@ -2,10 +2,8 @@ import { notFound } from "next/navigation";
 import {
   fetchByCategory,
   fetchCategories,
-  fetchCategory,
   fetchCategoryBySlug,
 } from "@/lib/actions";
-import mongoose from "mongoose";
 import Products from "../components/products";
 import { limit } from "@/lib/constant";
 

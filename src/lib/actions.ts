@@ -13,7 +13,6 @@ import mongoose, { Types } from "mongoose";
 import cloudinary from "cloudinary";
 import { revalidatePath } from "next/cache";
 import { limit } from "./constant";
-import { v4 as uuidv4 } from "uuid";
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -181,6 +180,7 @@ export async function updateCategory(
   }
 
   category.name = updatedData.name;
+  category.slug = slugify(updatedData.name, "-");
   category.description = updatedData.description;
 
   await category.save();
@@ -581,15 +581,19 @@ export async function updateProduct(
       // Update existing variant name
       await updateVariantName(oldVariantId, updatedData.variantName);
 
-      console.info(oldVariantId, updatedData.colorCode, updatedData.colorName, product.colorCode, product.colorName)
+      console.info(
+        oldVariantId,
+        updatedData.colorCode,
+        updatedData.colorName,
+        product.colorCode,
+        product.colorName,
+      );
       // Update color information in variant if color changed
       if (
         oldVariantId &&
         (updatedData.colorCode !== product.colorCode ||
           updatedData.colorName !== product.colorName)
       ) {
-
-
         await updateProductColorInVariant(
           oldVariantId,
           updatedData.slug || product.slug,

@@ -96,8 +96,8 @@ const categories: {
   },
   {
     id: "689f6a15306164754467da95",
-    name: "Signature Tables",
-    slug: "signature-tables",
+    name: "Stone Consol Tables",
+    slug: "stone-consol-tables",
     image: {
       id: "faxvofoidq33x5hzyter",
       url: "https://res.cloudinary.com/dlqyylssk/image/upload/v1755277839/faxvofoidq33x5hzyter.jpg",
@@ -107,8 +107,8 @@ const categories: {
   },
   {
     id: "689f6a44306164754467da97",
-    name: "Luxe Bathtubs",
-    slug: "luxe-bathtubs",
+    name: "Stone Bathtubs",
+    slug: "stone-bathtubs",
     image: {
       id: "vnsynhe1t2wz3e384uvy",
       url: "https://res.cloudinary.com/dlqyylssk/image/upload/v1755277885/vnsynhe1t2wz3e384uvy.jpg",
@@ -118,8 +118,8 @@ const categories: {
   },
   {
     id: "689f6a85306164754467da99",
-    name: "Sculpted Grace – Vases",
-    slug: "sculpted-grace-vases",
+    name: "Stone Sculpted Grace – Vases",
+    slug: "stone-sculpted-grace-vases",
     image: {
       id: "fvlf0isrydtq91euprhu",
       url: "https://res.cloudinary.com/dlqyylssk/image/upload/v1755277950/fvlf0isrydtq91euprhu.jpg",
@@ -129,14 +129,14 @@ const categories: {
   },
   {
     id: "689f70f4306164754467da9f",
-    name: "Marble Coasters",
-    slug: "marble-coasters",
+    name: "Stone Pedestal Wash Basin ",
+    slug: "stone-pedestal-wash-basin",
     image: {
-      id: "qaku8oacycvcsa8ggc0m",
-      url: "https://res.cloudinary.com/dlqyylssk/image/upload/v1755279597/qaku8oacycvcsa8ggc0m.png",
+      id: "natu6svuspqwtzunp8wl",
+      url: "https://res.cloudinary.com/dlqyylssk/image/upload/v1789027049/natu6svuspqwtzunp8wl.jpg",
     },
     description:
-      "Protect your surfaces in style with our handcrafted marble coasters — a perfect fusion of elegance and everyday function.",
+      "Elevate your bathroom with our premium ceramic Pedestal Wash Basin, combining modern elegance, durability, easy maintenance, and space-saving functionality.",
   },
   {
     id: "68a019940c2050e6110035c4",
