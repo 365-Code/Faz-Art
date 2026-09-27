@@ -1,116 +1,176 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import TabsList and TabsTrigger
 
 export default function Loading() {
   return (
     <div className="min-h-screen bg-background">
-      {/* AdminHeader Skeleton */}
+      {/* =====================================================
+          ADMIN HEADER
+      ===================================================== */}
       <div className="border-b border-border/50 bg-card/50">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <Skeleton className="h-8 w-64 mb-2" />
-              <Skeleton className="h-5 w-80" />
+          <div className="flex items-center justify-between gap-6">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-56" />
+              <Skeleton className="h-4 w-72" />
             </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-10 w-32 rounded-md" />
-              <Skeleton className="h-10 w-32 rounded-md" />
+
+            <div className="hidden items-center gap-2 sm:flex">
+              <Skeleton className="h-10 w-28 rounded-md" />
+              <Skeleton className="h-10 w-28 rounded-md" />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container px-4 py-8">
-        {/* TabsList Skeleton */}
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview" disabled>
-            <Skeleton className="h-6 w-24" />
-          </TabsTrigger>
-          <TabsTrigger value="products" disabled>
-            <Skeleton className="h-6 w-24" />
-          </TabsTrigger>
-          <TabsTrigger value="categories" disabled>
-            <Skeleton className="h-6 w-24" />
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Overview Tab Skeleton */}
-        <div className="space-y-8 mt-8">
-          {/* Stats Cards Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* =====================================================
+          CONTENT
+      ===================================================== */}
+      <div className="container mx-auto px-4 py-6 sm:py-8">
+        {/* =================================================
+            ADMIN NAVIGATION
+        ================================================= */}
+        <nav className="mb-8 overflow-hidden border-b">
+          <div className="flex min-w-max gap-1">
             {Array.from({ length: 3 }).map((_, index) => (
-              <Card key={index}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Skeleton className="h-4 w-24 mb-2" />
-                      <Skeleton className="h-8 w-32" />
-                    </div>
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div
+                key={index}
+                className="flex items-center gap-2 px-4 py-3"
+              >
+                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-4 w-20" />
+              </div>
             ))}
           </div>
+        </nav>
 
-          {/* Recent Activity Skeleton */}
+        {/* =================================================
+            PAGE HEADER
+        ================================================= */}
+        <section className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-10 w-40" />
+            <Skeleton className="h-5 w-full max-w-xl" />
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Skeleton className="h-10 w-32 rounded-md" />
+            <Skeleton className="h-10 w-40 rounded-md" />
+          </div>
+        </section>
+
+        {/* =================================================
+            STATS
+        ================================================= */}
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Card key={index}>
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-10 w-20" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+
+                  <Skeleton className="h-11 w-11 rounded-xl" />
+                </div>
+
+                <div className="mt-6">
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </section>
+
+        {/* =================================================
+            STOREFRONT ACTIVITY
+        ================================================= */}
+        <section className="mt-10 space-y-5">
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-44" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+
+          {/* Visitors skeleton */}
           <Card>
-            <CardHeader>
-              <CardTitle>
-                <Skeleton className="h-6 w-48" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Array.from({ length: 3 }).map((_, index) => (
+            <CardContent className="p-6 sm:p-8">
+              <div className="flex flex-col gap-8">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-36" />
+                    <Skeleton className="h-4 w-56" />
+                  </div>
+
+                  <Skeleton className="h-9 w-24 rounded-full" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="rounded-xl border bg-muted/20 p-6"
+                    >
+                      <div className="flex items-start justify-between">
+                        <Skeleton className="h-11 w-11 rounded-full" />
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+
+                      <div className="mt-6 space-y-2">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-8 w-20" />
+                        <Skeleton className="h-3 w-32" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-center">
+                  <Skeleton className="h-9 w-32 rounded-full" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* =================================================
+            CUSTOMER ENQUIRIES
+        ================================================= */}
+        <section className="mt-10 space-y-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-80" />
+            </div>
+
+            <Skeleton className="h-4 w-28" />
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              <div className="divide-y">
+                {Array.from({ length: 4 }).map((_, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg"
+                    className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <Skeleton className="h-2 w-2 rounded-full" />
-                    <div className="flex-1 space-y-1">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-3 w-24" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-48" />
+                      <Skeleton className="h-3 w-64" />
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-20 rounded-md" />
+                      <Skeleton className="h-8 w-8 rounded-md" />
                     </div>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
-
-          {/* Visitors Component Skeleton */}
-          <div className="py-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <Skeleton className="h-8 w-64 mb-2" />
-                <Skeleton className="h-5 w-80" />
-              </div>
-              <div className="flex items-center space-x-4">
-                <Skeleton className="h-4 w-16 rounded-full" />
-                <Skeleton className="h-10 w-40 rounded-md" />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {Array.from({ length: 2 }).map((_, index) => (
-                <div key={index} className="rounded-2xl p-8 border bg-muted/50">
-                  <div className="flex items-center justify-between mb-6">
-                    <Skeleton className="h-12 w-12 rounded-full" />
-                    <Skeleton className="h-4 w-16" />
-                  </div>
-                  <div>
-                    <Skeleton className="h-4 w-24 mb-2" />
-                    <Skeleton className="h-10 w-20 mb-2" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-center mt-8">
-              <Skeleton className="h-10 w-32 rounded-full" />
-            </div>
-          </div>
-        </div>
+        </section>
       </div>
     </div>
   );

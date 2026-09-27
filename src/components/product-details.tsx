@@ -3,241 +3,445 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Home } from "lucide-react";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import type { ProductType } from "@/lib/types";
-import { Separator } from "./ui/separator";
 
 export default function ProductDetailsClient({
   product,
 }: {
   product: ProductType;
 }) {
-  const router = useRouter();
-  const [selectedImage, setSelectedImage] = useState<{
-    id: string;
-    url: string;
-  }>(product.images[0]);
+  const [selectedImage, setSelectedImage] = useState(product.images[0]);
+
+  const selectedIndex = product.images.findIndex(
+    (image) => image.id === selectedImage.id
+  );
+
+  const showPreviousImage = () => {
+    if (product.images.length <= 1) return;
+
+    const previousIndex =
+      selectedIndex <= 0
+        ? product.images.length - 1
+        : selectedIndex - 1;
+
+    setSelectedImage(product.images[previousIndex]);
+  };
+
+  const showNextImage = () => {
+    if (product.images.length <= 1) return;
+
+    const nextIndex =
+      selectedIndex >= product.images.length - 1
+        ? 0
+        : selectedIndex + 1;
+
+    setSelectedImage(product.images[nextIndex]);
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Breadcrumb and Back Button Section */}
-      <section className="py-6 border-b border-border/50 bg-gradient-to-br from-background to-muted/30">
-        <div className="mx-auto container px-4 flex items-center justify-between">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href="/" className="flex items-center">
-                    <Home className="h-4 w-4 mr-1" />
-                    Home
-                  </Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href="/collections">Collections</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href={`/collections/${product.categoryId.slug}`}>
-                    {product.categoryId.name}
-                  </Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{product.name}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
+    <main className="min-h-screen bg-background">
+      {/* ==================================================
+          BREADCRUMB
+      ================================================== */}
+      <section className="px-6 pt-8 lg:px-10">
+        <div className="mx-auto max-w-[1440px]">
+          <nav className="flex items-center gap-2 overflow-hidden text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
+            <Link
+              href="/collections"
+              className="shrink-0 transition-colors hover:text-foreground"
+            >
+              Collections
+            </Link>
+
+            <span className="shrink-0 text-muted-foreground/40">
+              /
+            </span>
+
+            <Link
+              href={`/collections/${product.categoryId.slug}`}
+              className="max-w-[140px] shrink-0 truncate transition-colors hover:text-foreground sm:max-w-none"
+            >
+              {product.categoryId.name}
+            </Link>
+
+            <span className="shrink-0 text-muted-foreground/40">
+              /
+            </span>
+
+            <span className="truncate text-foreground/70">
+              {product.name}
+            </span>
+          </nav>
         </div>
       </section>
 
-      {/* Product Details Content */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 xl:grid-cols-5">
-          {/* Image Gallery */}
-          <div className="lg:col-span-2 xl:col-span-3">
-            <div className="flex h-full flex-col space-y-6 md:flex-row-reverse md:justify-between md:space-x-6 md:space-y-0">
-              {/* Main Image */}
-              <div className="flex-1 w-full h-[500px] md:h-[600px] mx-auto">
-                {/* Added fixed height for the container */}
-                <Card className="relative aspect-square  h-full overflow-hidden rounded-xl border-0 shadow-lg flex items-center justify-center p-0">
-                  {/* Removed aspect-square, added flex for centering */}
-                  <Image
-                    src={selectedImage.url || "/image-placeholder.svg"}
-                    alt={product.name}
-                    fill
-                    // width={500}
-                    // height={500}
-                    className="rounded-xl w-fit h-fit object-contain transition-all duration-300"
-                    priority
-                  />
-                </Card>
-              </div>
+      {/* ==================================================
+          PRODUCT
+      ================================================== */}
+      <section className="px-6 pb-24 pt-10 sm:pt-12 lg:px-10 lg:pb-36 lg:pt-16">
+        <div className="mx-auto grid max-w-[1440px] gap-12 lg:grid-cols-[1.35fr_0.65fr] lg:gap-16 xl:grid-cols-[1.4fr_0.6fr] xl:gap-20">
+          {/* ==================================================
+              GALLERY
+          ================================================== */}
+          <div className="min-w-0">
+            {/* Main image */}
+            <div className="group relative aspect-[4/5] overflow-hidden bg-muted sm:aspect-[5/4] lg:aspect-[4/3]">
+              <Image
+                src={selectedImage.url || "/image-placeholder.svg"}
+                alt={product.name}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 65vw"
+                className="
+                  object-contain
+                  p-4
+                  transition-transform
+                  duration-700
+                  ease-out
+                  group-hover:scale-[1.015]
+                  sm:p-8
+                  lg:p-12
+                "
+              />
 
-              {/* Thumbnail Images */}
-              <div className="flex shrink-0 flex-row md:max-h-[600px] md:flex-col gap-4 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto no-scrollbar p-1">
-                {product.images.map((image, i) => (
-                  <Card
-                    key={image.id}
-                    className={`aspect-square p-0 min-w-24 min-h-24 sm:min-h-28 sm:min-w-28 cursor-pointer overflow-hidden border-2 transition-all duration-200 hover:shadow-md ${
-                      selectedImage.id === image.id
-                        ? "border-primary shadow-md"
-                        : "border-border hover:border-muted-foreground"
-                    }`}
-                    onClick={() => setSelectedImage(image)}
+              {/* Desktop image navigation */}
+              {product.images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={showPreviousImage}
+                    aria-label="Previous image"
+                    className="
+                      absolute
+                      left-4
+                      top-1/2
+                      flex
+                      size-10
+                      -translate-y-1/2
+                      items-center
+                      justify-center
+                      rounded-full
+                      border
+                      border-border/50
+                      bg-background/80
+                      text-foreground
+                      opacity-0
+                      backdrop-blur-sm
+                      transition-all
+                      duration-300
+                      hover:bg-background
+                      focus-visible:opacity-100
+                      focus-visible:outline-none
+                      focus-visible:ring-2
+                      focus-visible:ring-ring
+                      group-hover:opacity-100
+                    "
                   >
-                    <CardContent className="p-0">
-                      <div className="relative aspect-square">
-                        <Image
-                          src={image.url || "/placeholder.svg"}
-                          alt={`${product.name} thumbnail ${i + 1}`}
-                          fill
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
+                    <ChevronLeft className="size-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={showNextImage}
+                    aria-label="Next image"
+                    className="
+                      absolute
+                      right-4
+                      top-1/2
+                      flex
+                      size-10
+                      -translate-y-1/2
+                      items-center
+                      justify-center
+                      rounded-full
+                      border
+                      border-border/50
+                      bg-background/80
+                      text-foreground
+                      opacity-0
+                      backdrop-blur-sm
+                      transition-all
+                      duration-300
+                      hover:bg-background
+                      focus-visible:opacity-100
+                      focus-visible:outline-none
+                      focus-visible:ring-2
+                      focus-visible:ring-ring
+                      group-hover:opacity-100
+                    "
+                  >
+                    <ChevronRight className="size-4" />
+                  </button>
+                </>
+              )}
+
+              {/* Image counter */}
+              {product.images.length > 1 && (
+                <div
+                  className="
+                    absolute
+                    bottom-4
+                    right-4
+                    bg-background/80
+                    px-3
+                    py-2
+                    text-[9px]
+                    uppercase
+                    tracking-[0.2em]
+                    text-foreground
+                    backdrop-blur-sm
+                    sm:bottom-5
+                    sm:right-5
+                  "
+                >
+                  {String(selectedIndex + 1).padStart(2, "0")}
+                  {" / "}
+                  {String(product.images.length).padStart(2, "0")}
+                </div>
+              )}
+            </div>
+
+            {/* ==================================================
+                THUMBNAILS
+            ================================================== */}
+            {product.images.length > 1 && (
+              <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+                {product.images.map((image, index) => (
+                  <button
+                    key={image.id}
+                    type="button"
+                    onClick={() => setSelectedImage(image)}
+                    aria-label={`View image ${index + 1}`}
+                    aria-current={
+                      selectedImage.id === image.id
+                    }
+                    className={`
+                      relative
+                      size-16
+                      shrink-0
+                      overflow-hidden
+                      bg-muted
+                      transition-all
+                      duration-300
+                      sm:size-20
+                      lg:size-24
+                      ${
+                        selectedImage.id === image.id
+                          ? "ring-1 ring-foreground ring-offset-2 ring-offset-background"
+                          : "opacity-60 hover:opacity-100"
+                      }
+                    `}
+                  >
+                    <Image
+                      src={image.url || "/image-placeholder.svg"}
+                      alt={`${product.name} image ${index + 1}`}
+                      fill
+                      sizes="96px"
+                      className="object-cover"
+                    />
+                  </button>
                 ))}
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Product Details */}
-          <div className="space-y-10 lg:col-span-1 xl:col-span-2">
-            <div className="space-y-6">
-              <Badge
-                variant="secondary"
-                className="text-sm font-medium tracking-wide uppercase bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
-              >
+          {/* ==================================================
+              PRODUCT INFORMATION
+          ================================================== */}
+          <div className="min-w-0 lg:sticky lg:top-28 lg:self-start">
+            <div className="max-w-xl">
+              {/* Category */}
+              <p className="text-[9px] font-medium uppercase tracking-[0.3em] text-muted-foreground">
                 {product.categoryId.name}
-              </Badge>
+              </p>
 
-              <div className="space-y-4">
-                <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight leading-tight">
-                  {product.name}
-                </h1>
-                <div className="h-px bg-gradient-to-r from-border to-transparent" />
-              </div>
+              {/* Product name */}
+              <h1
+                className="
+                  mt-5
+                  font-serif
+                  text-4xl
+                  font-normal
+                  leading-[0.95]
+                  tracking-[-0.045em]
+                  sm:text-5xl
+                  lg:text-6xl
+                "
+              >
+                {product.name}
+              </h1>
 
-              <p className="text-lg leading-relaxed text-muted-foreground font-light">
+              {/* Description */}
+              <p className="mt-7 text-base leading-8 text-muted-foreground sm:mt-8">
                 {product.description}
               </p>
-            </div>
 
-            <div className="space-y-4">
-              <Separator />
-              <ProductVariants product={product} />
-            </div>
+              {/* ==================================================
+                  PRODUCT DETAILS
+              ================================================== */}
+              <div className="mt-8 border-y border-border/60 sm:mt-10">
+                <div className="grid grid-cols-2 border-b border-border/60 py-5">
+                  <div>
+                    <p className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
+                      Material
+                    </p>
 
-            {/* Add to Cart / Call to Action (Placeholder) */}
-            <div className="space-y-6 pt-8">
-              {/* Section Heading */}
-              <div className="text-center space-y-2">
-                <h3 className="text-xl font-semibold tracking-tight">
-                  Interested in this product?
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  Our team is here to answer your questions and help you with
-                  customizations.
-                </p>
+                    <p className="mt-2 text-sm">
+                      Marble
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
+                      Colour
+                    </p>
+
+                    <p className="mt-2 text-sm">
+                      {product.colorName}
+                    </p>
+                  </div>
+                </div>
+
+                <ProductVariants product={product} />
               </div>
-              <div className="h-px bg-gradient-to-r from-border to-transparent" />
-              <Link
-                href={`https://wa.me/+917852057102?text=I%20am%20interested%20in%20the%20${product.name}%20product.`} // Replace with actual WhatsApp number
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button size="lg" className="w-full text-lg py-6">
-                  Inquire About Product
-                </Button>
-              </Link>
-              {/* <Button
-                variant="outline"
-                size="lg"
-                className="w-full text-lg py-6 bg-transparent"
-              >
-                Schedule a Consultation
-              </Button> */}
+
+              {/* ==================================================
+                  ENQUIRY
+              ================================================== */}
+              <div className="mt-9 sm:mt-10">
+                <div className="mb-5">
+                  <p className="text-[9px] font-medium uppercase tracking-[0.3em] text-muted-foreground">
+                    Enquiries
+                  </p>
+
+                  <h2 className="mt-3 font-serif text-2xl sm:text-3xl">
+                    Interested in this piece?
+                  </h2>
+
+                  <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+                    Speak with our team about availability,
+                    dimensions, customization and delivery.
+                  </p>
+                </div>
+
+                <Link
+                  href={`https://wa.me/+917852057102?text=I%20am%20interested%20in%20the%20${encodeURIComponent(
+                    product.name
+                  )}%20product.`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <Button
+                    size="lg"
+                    className="
+                      group
+                      h-14
+                      w-full
+                      rounded-none
+                      text-[10px]
+                      font-medium
+                      uppercase
+                      tracking-[0.2em]
+                    "
+                  >
+                    Make an enquiry
+
+                    <ArrowUpRight
+                      className="
+                        ml-3
+                        size-4
+                        transition-transform
+                        duration-300
+                        group-hover:-translate-y-0.5
+                        group-hover:translate-x-0.5
+                      "
+                    />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
+      </section>
+    </main>
+  );
+}
+
+/* ======================================================
+   PRODUCT VARIANTS
+====================================================== */
+
+function ProductVariants({
+  product,
+}: {
+  product: ProductType;
+}) {
+  const variants = product.variantId?.variants ?? [];
+
+  if (!variants.length) {
+    return null;
+  }
+
+  return (
+    <div className="py-5">
+      <p className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
+        Available colours
+      </p>
+
+      <div className="mt-4 flex flex-wrap gap-3">
+        {variants.map((variant) => {
+          const isActive =
+            product.slug === variant.productSlug;
+
+          return (
+            <Link
+              key={variant.productSlug}
+              href={`/products/${variant.productSlug}`}
+              aria-label={`View ${variant.colorName} variant`}
+              title={variant.colorName}
+            >
+              <span
+                className={`
+                  relative
+                  flex
+                  size-9
+                  items-center
+                  justify-center
+                  rounded-full
+                  border
+                  transition-all
+                  duration-300
+                  hover:scale-105
+                  ${
+                    isActive
+                      ? "border-foreground"
+                      : "border-border hover:border-foreground/50"
+                  }
+                `}
+              >
+                <span
+                  className="size-6 rounded-full"
+                  style={{
+                    backgroundColor: variant.colorCode,
+                  }}
+                />
+
+                {isActive && (
+                  <span className="absolute inset-[-4px] rounded-full border border-foreground/20" />
+                )}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
 }
-
-const ProductVariants = ({ product }: { product: ProductType }) => {
-  return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium text-gray-900 tracking-wide uppercase">
-          Color
-        </h3>
-
-        <p className="text-base text-gray-600 font-light">
-          {product.colorName}
-        </p>
-      </div>
-
-      <div className="flex space-x-4 h-8">
-        {product.variantId.variants.map((variant) => (
-          <Link
-            key={variant.productSlug}
-            href={"/products/" + variant.productSlug}
-          >
-            <Button
-              className={`group relative h-12 w-12 rounded-full border-2 transition-all duration-300 hover:scale-110 hover:shadow-lg ${
-                product.slug === variant.productSlug
-                  ? "border-gray-900 shadow-lg scale-110"
-                  : "border-gray-300 hover:border-gray-400"
-              }`}
-              style={{ backgroundColor: variant.colorCode }}
-              aria-label={`Select ${variant.colorName}`}
-            >
-              {/* Inner ring for selected state */}
-
-              {product.slug === variant.productSlug && (
-                <div className="absolute inset-1 rounded-full border-2 border-white shadow-inner" />
-              )}
-
-              {/* Special border for white variant */}
-
-              {variant.colorCode === product.colorCode && (
-                <div className="absolute inset-0 rounded-full border border-gray-200" />
-              )}
-
-              {/* Hover effect */}
-
-              <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
-            </Button>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-};

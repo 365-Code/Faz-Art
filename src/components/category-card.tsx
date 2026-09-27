@@ -1,63 +1,164 @@
 "use client";
 
 import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { CategoryType } from "@/lib/types";
 
-export default function CategoryCard({ category }: { category: CategoryType }) {
+export default function CategoryCard({
+  category,
+}: {
+  category: CategoryType;
+}) {
   return (
     <Link href={`/collections/${category.slug}`} className="group block">
-      <Card className="relative h-80 overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-700 transform hover:scale-[1.02] bg-card p-0">
-        {/* Background Image */}
-        <div className="relative w-full h-full overflow-hidden">
-          <Image
-            src={
-              category.image.url ||
-              "/image-placeholder.svg?height=400&width=320&text=Marble+Category"
-            }
-            alt={category.slug}
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-          />
+      <article
+        className="
+          relative
+          h-[420px]
+          overflow-hidden
+          bg-muted
+          sm:h-[460px]
+          lg:h-[500px]
+        "
+      >
+        {/* Image */}
+        <Image
+          src={
+            category.image?.url ||
+            "/image-placeholder.svg?height=500&width=400&text=Marble+Category"
+          }
+          alt={category.name}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="
+            object-cover
+            transition-transform
+            duration-1000
+            ease-out
+            group-hover:scale-[1.05]
+          "
+        />
 
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10 group-hover:from-black/95 transition-all duration-500" />
+        {/* Soft editorial gradient */}
+        <div
+          className="
+            absolute inset-0
+            bg-gradient-to-t
+            from-black/80
+            via-black/20
+            to-transparent
+            transition-opacity
+            duration-700
+            group-hover:from-black/85
+          "
+        />
 
-          {/* Decorative Element */}
-          <div className="absolute top-6 right-6 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-          </div>
+        {/* Top metadata */}
+        <div className="absolute left-6 right-6 top-6 flex items-center justify-between">
+          <span
+            className="
+              text-[9px]
+              font-medium
+              uppercase
+              tracking-[0.3em]
+              text-white/70
+            "
+          >
+            The Artisans Gallery
+          </span>
+
+          <span
+            className="
+              flex
+              size-10
+              items-center
+              justify-center
+              rounded-full
+              border
+              border-white/20
+              bg-black/10
+              text-white
+              backdrop-blur-sm
+              transition-all
+              duration-500
+              group-hover:bg-white
+              group-hover:text-black
+            "
+          >
+            <ArrowUpRight
+              className="
+                size-4
+                transition-transform
+                duration-500
+                group-hover:translate-x-0.5
+                group-hover:-translate-y-0.5
+              "
+            />
+          </span>
         </div>
 
         {/* Content */}
-        <CardContent className="absolute inset-0 p-6 flex flex-col justify-end">
-          <div className="space-y-4 text-white">
-            <div className="space-y-2">
-              <h3 className="font-heading text-2xl font-bold group-hover:text-amber-200 transition-colors duration-300">
-                {category.name}
-              </h3>
-              <p className="text-white/80 text-sm leading-relaxed line-clamp-2 group-hover:text-white/90 transition-colors duration-300">
-                {category.description}
-              </p>
-            </div>
+        <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+          <div className="max-w-xl">
+
+            {/* Category */}
+            <h3
+              className="
+                font-serif
+                text-3xl
+                font-normal
+                leading-tight
+                tracking-[-0.025em]
+                text-white
+                sm:text-4xl
+              "
+            >
+              {category.name}
+            </h3>
+
+            {/* Description */}
+            <p
+              className="
+                mt-3
+                max-w-lg
+                text-sm
+                leading-6
+                text-white/70
+                line-clamp-2
+                transition-colors
+                duration-500
+                group-hover:text-white/85
+              "
+            >
+              {category.description}
+            </p>
 
             {/* CTA */}
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-white/90 text-sm font-medium group-hover:text-white transition-colors duration-300">
-                Explore Category
-              </span>
-              <ArrowRight className="h-5 w-5 text-white/70 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
-            </div>
-          </div>
-        </CardContent>
+            <div
+              className="
+                mt-6
+                flex
+                items-center
+                gap-3
+                text-[10px]
+                font-medium
+                uppercase
+                tracking-[0.25em]
+                text-white/80
+                transition-colors
+                duration-300
+                group-hover:text-white
+              "
+            >
+              <span>View collection</span>
 
-        {/* Hover Border Effect */}
-        <div className="absolute inset-0 rounded-lg border-2 border-transparent group-hover:border-amber-400/30 transition-all duration-500" />
-      </Card>
+              <span className="h-px w-8 bg-white/40 transition-all duration-500 group-hover:w-12 group-hover:bg-white/80" />
+            </div>
+
+          </div>
+        </div>
+      </article>
     </Link>
   );
 }

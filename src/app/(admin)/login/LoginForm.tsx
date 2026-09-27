@@ -1,6 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,156 +24,205 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login } from "./actions";
-import { LockIcon, UserIcon, Eye, EyeOff, Shield, Gem } from "lucide-react";
-import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
-import Image from "next/image";
 
-const LoginForm = () => {
+import { login } from "./actions";
+
+export default function LoginForm() {
   const [state, loginAction] = useActionState(login, undefined);
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="mt-20 min-h-screen bg-gradient-to-br from-gray-50 via-white to-amber-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo Section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center bg-gradient-to-br rounded-full mb-4 shadow-lg aspect-square w-20">
-            <Image
-              src="/logo.jpg"
-              alt="The Artisans Gallery"
-              width={48}
-              height={48}
-              className="object-cover w-full h-full rounded-full"
-            />
+    <main className="min-h-screen bg-background">
+      <div className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6">
+        <div className="w-full max-w-md">
+          {/* =====================================================
+              BRAND
+          ====================================================== */}
+          <div className="mb-10 text-center">
+            <Link
+              href="/"
+              className="group inline-flex flex-col items-center"
+            >
+              <div className="relative mb-4 h-14 w-14 overflow-hidden rounded-full border border-border bg-muted shadow-sm">
+                <Image
+                  src="/logo.jpg"
+                  alt="Artisan Gallery"
+                  fill
+                  priority
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
+
+              <span className="font-serif text-2xl tracking-tight">
+                Artisan Gallery
+              </span>
+            </Link>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Admin Portal
-          </h1>
-          <p className="text-gray-600">The Artisans Gallery Management System</p>
-        </div>
 
-        <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="space-y-2 text-center pb-6">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <Shield className="w-6 h-6 text-amber-600" />
-              <CardTitle className="text-2xl font-bold text-gray-900">
-                Secure Login
-              </CardTitle>
-            </div>
-            <CardDescription className="text-gray-600">
-              Enter your credentials to access the admin dashboard
-            </CardDescription>
-          </CardHeader>
+          {/* =====================================================
+              LOGIN
+          ====================================================== */}
+          <Card className="border-border/60 bg-card shadow-sm">
+            <CardHeader className="space-y-4 border-b border-border/60 px-6 py-7 sm:px-8">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <span className="h-px w-7 bg-foreground/40" />
 
-          <CardContent className="space-y-6">
-            <form action={loginAction} className="space-y-6">
-              {/* Username Field */}
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-gray-700 font-medium">
-                  Username
-                </Label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                    <UserIcon className="h-5 w-5 text-gray-400" />
+                    <span className="text-[10px] font-medium uppercase tracking-[0.3em] text-muted-foreground">
+                      Admin Portal
+                    </span>
                   </div>
-                  <Input
-                    id="username"
-                    name="username"
-                    placeholder="Enter your username"
-                    className="pl-10 h-12 border-gray-300 focus:border-amber-500 focus:ring-amber-500 bg-white"
-                    required
-                  />
+
+                  <CardTitle className="font-serif text-3xl font-normal tracking-tight">
+                    Sign in
+                  </CardTitle>
+
+                  <CardDescription className="text-sm leading-6">
+                    Sign in to continue to the administration area.
+                  </CardDescription>
+                </div>
+
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-muted/40">
+                  <ShieldCheck className="h-4 w-4 text-muted-foreground" />
                 </div>
               </div>
+            </CardHeader>
 
-              {/* Password Field */}
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-700 font-medium">
-                  Password
-                </Label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                    <LockIcon className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    placeholder="Enter your password"
-                    className="pl-10 pr-10 h-12 border-gray-300 focus:border-amber-500 focus:ring-amber-500 bg-white"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+            <CardContent className="px-6 py-7 sm:px-8">
+              <form action={loginAction} className="space-y-6">
+                {/* Username */}
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="username"
+                    className="text-xs font-medium uppercase tracking-[0.12em]"
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </button>
+                    Username
+                  </Label>
+
+                  <div className="relative">
+                    <UserRound className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                    <Input
+                      id="username"
+                      name="username"
+                      type="text"
+                      autoComplete="username"
+                      placeholder="Enter username"
+                      required
+                      className="h-12 border-border/70 bg-background pl-10 shadow-none transition-colors focus-visible:border-foreground/40 focus-visible:ring-1 focus-visible:ring-foreground/20"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Error Message */}
-              {state?.errors?.message && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-red-600 text-sm font-medium">
-                    {state.errors.message}
-                  </p>
+                {/* Password */}
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="password"
+                    className="text-xs font-medium uppercase tracking-[0.12em]"
+                  >
+                    Password
+                  </Label>
+
+                  <div className="relative">
+                    <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
+                      placeholder="Enter password"
+                      required
+                      className="h-12 border-border/70 bg-background pl-10 pr-11 shadow-none transition-colors focus-visible:border-foreground/40 focus-visible:ring-1 focus-visible:ring-foreground/20"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
-              )}
 
-              {/* Submit Button */}
-              <SubmitButton />
-            </form>
+                {/* Error */}
+                {state?.errors?.message && (
+                  <div
+                    role="alert"
+                    className="border border-destructive/20 bg-destructive/5 px-4 py-3"
+                  >
+                    <p className="text-sm text-destructive">
+                      {state.errors.message}
+                    </p>
+                  </div>
+                )}
 
-            {/* Security Notice */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-6">
-              <div className="flex items-center space-x-2">
-                <Gem className="w-4 h-4 text-amber-600" />
-                <p className="text-amber-800 text-sm">
-                  This is a secure admin area for The Artisans Gallery management.
-                </p>
-              </div>
+                {/* Submit */}
+                <SubmitButton />
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* =====================================================
+              FOOTER
+          ====================================================== */}
+          <div className="mt-7 flex flex-col items-center gap-4">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              <LockKeyhole className="h-3 w-3" />
+              Secure administrator access
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Footer */}
-        <div className="text-center mt-8 text-gray-500 text-sm">
-          <p>© 2025 The Artisans Gallery. All rights reserved.</p>
+            <Link
+              href="/"
+              className="group flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Return to website
+              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+            </Link>
+
+            <p className="pt-3 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/50">
+              © {new Date().getFullYear()} Artisan Gallery
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   );
-};
+}
 
-export default LoginForm;
+/* ==============================================================
+   SUBMIT BUTTON
+================================================================ */
 
-const SubmitButton = () => {
+function SubmitButton() {
   const { pending } = useFormStatus();
+
   return (
     <Button
       type="submit"
-      className="w-full h-12  text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200"
       disabled={pending}
+      className="group h-12 w-full rounded-md bg-foreground text-background shadow-none transition-all hover:bg-foreground/90"
     >
       {pending ? (
-        <div className="flex items-center space-x-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+        <div className="flex items-center gap-2">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-background/30 border-t-background" />
           <span>Signing in...</span>
         </div>
       ) : (
-        <div className="flex items-center space-x-2">
-          <Shield className="w-4 h-4" />
-          <span>Sign in to Dashboard</span>
+        <div className="flex items-center justify-center gap-2">
+          <span>Sign in</span>
+          <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
         </div>
       )}
     </Button>
   );
-};
+}

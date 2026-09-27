@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Layers3 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-export default function NotFound() {
+export default function CollectionNotFound() {
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-background">
       <section className="flex min-h-[calc(100vh-4rem)] items-center px-6 py-20 lg:px-10">
@@ -21,12 +21,13 @@ export default function NotFound() {
             {/* Main content */}
             <div className="max-w-4xl">
               <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-muted-foreground">
-                404 / Page not found
+                404 / Collection not found
               </p>
 
               <h1
                 className="
                   mt-6
+                  max-w-5xl
                   font-serif
                   text-6xl
                   font-normal
@@ -36,17 +37,17 @@ export default function NotFound() {
                   lg:text-[8rem]
                 "
               >
-                This page
+                This collection
                 <br />
                 <span className="text-muted-foreground">
-                  has moved.
+                  isn&apos;t here.
                 </span>
               </h1>
 
               <p className="mt-8 max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">
-                The page you&apos;re looking for may no longer be available
-                at this address. Explore our collections or return home to
-                discover handcrafted marble pieces.
+                The collection you&apos;re looking for may have been renamed,
+                updated, or is no longer available. There are more handcrafted
+                marble pieces waiting to be discovered.
               </p>
 
               {/* Actions */}
@@ -65,7 +66,7 @@ export default function NotFound() {
                       tracking-[0.2em]
                     "
                   >
-                    Explore collections
+                    View all collections
 
                     <ArrowUpRight
                       className="
@@ -100,10 +101,49 @@ export default function NotFound() {
                 </Link>
               </div>
 
+              {/* Helpful recovery */}
+              <div className="mt-16 border-t border-border/60 pt-6">
+                <div className="flex items-start gap-4">
+                  <Layers3 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+
+                  <div>
+                    <p className="text-xs font-medium">
+                      Explore something new
+                    </p>
+
+                    <p className="mt-1 max-w-md text-xs leading-6 text-muted-foreground">
+                      Discover handcrafted wash basins, tables, bathtubs,
+                      vases, decorative pieces, and other marble creations
+                      across our collections.
+                    </p>
+
+                    <Link
+                      href="/collections"
+                      className="
+                        mt-3
+                        inline-flex
+                        items-center
+                        text-[10px]
+                        font-medium
+                        uppercase
+                        tracking-[0.2em]
+                        underline
+                        underline-offset-4
+                        transition-colors
+                        hover:text-muted-foreground
+                      "
+                    >
+                      Discover collections
+                      <ArrowUpRight className="ml-2 size-3" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
               {/* Footer detail */}
-              <div className="mt-16 border-t border-border/60 pt-5">
+              <div className="mt-10">
                 <p className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
-                  Handcrafted marble · Timeless by nature
+                  Handcrafted marble · Made with intention
                 </p>
               </div>
             </div>

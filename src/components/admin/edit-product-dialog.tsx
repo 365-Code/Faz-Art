@@ -3,14 +3,16 @@
 import {
   type ChangeEvent,
   type FormEvent,
-  useState,
-  useMemo,
   useEffect,
+  useMemo,
+  useState,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -27,7 +29,15 @@ import type {
 } from "@/lib/types";
 import { toast } from "sonner";
 import Image from "next/image";
-import { Undo, X } from "lucide-react";
+import {
+  AlertCircle,
+  ImageIcon,
+  Loader2,
+  Trash2,
+  Undo,
+  Upload,
+  X,
+} from "lucide-react";
 import { Combobox } from "@/components/ui/combobox";
 import { updateProduct, fetchVariants } from "@/lib/actions";
 import { uploadMultipleToCloudinary } from "@/lib/api";
@@ -47,10 +57,12 @@ interface UpdateProductPayload {
   images: ProductImage[];
   colorCode: string;
   colorName: string;
-  isVariant: "true" | "false"; // keep it consistent with your current usage
+  isVariant: "true" | "false";
   newVariantId?: string;
   variantName?: string;
 }
+
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
 export function EditProductDialog({
   isOpen,
@@ -58,105 +70,187 @@ export function EditProductDialog({
   product,
   categories,
 }: EditProductDialogProps) {
-  const [name, setName] = useState(product?.name || "");
-  const [description, setDescription] = useState(product?.description || "");
-  const [selectedCategory, setSelectedCategory] = useState(
-    product?.categoryId.id || ""
-  );
-  const [existingImages, setExistingImages] = useState<ProductImage[]>(
-    product?.images || []
-  );
+  const router = useRouter();
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+
+  const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [removedImages, setRemovedImages] = useState<ProductImage[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Variant related states
   const [variants, setVariants] = useState<VariantType[]>([]);
-  const [isVariant, setIsVariant] = useState("false");
+  const [isLoadingVariants, setIsLoadingVariants] = useState(false);
+
+  const [isVariant, setIsVariant] = useState<"true" | "false">("false");
   const [selectedVariant, setSelectedVariant] = useState("");
   const [variantName, setVariantName] = useState("");
   const [colorCode, setColorCode] = useState("#ffffff");
   const [colorName, setColorName] = useState("");
 
-  // Load variants when dialog opens
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  /*
+
+* Load variants whenever the dialog opens.
+  */
   useEffect(() => {
+    if (!isOpen) return;
+
     const loadVariants = async () => {
-      if (isOpen) {
-        try {
-          const variantsData = await fetchVariants();
-          setVariants(variantsData);
-        } catch (error) {
-          console.error("Error loading variants:", error);
-        }
+      setIsLoadingVariants(true);
+
+      try {
+        const variantsData = await fetchVariants();
+        setVariants(variantsData);
+      } catch (error) {
+        console.error("Error loading variants:", error);
+        toast.error("Failed to load variants.");
+      } finally {
+        setIsLoadingVariants(false);
       }
     };
 
     loadVariants();
   }, [isOpen]);
 
-  // Update form fields when product prop changes
+  /*
+
+* Populate form whenever the selected product changes.
+  */
   useEffect(() => {
-    if (product) {
-      setName(product.name);
-      setDescription(product.description);
-      setSelectedCategory(product.categoryId.id.toString());
-      setExistingImages(product.images || []);
+    if (!product) return;
+
+    setName(product.name);
+
+    setDescription(product.description);
+    setSelectedCategory(product.categoryId.id.toString());
+
+    setExistingImages(product.images || []);
+    setNewImageFiles([]);
+    setNewImagePreviews([]);
+    setRemovedImages([]);
+
+    setColorCode(product.colorCode || "#ffffff");
+    setColorName(product.colorName || "");
+
+    setVariantName(product.variantId?.name || "");
+    setSelectedVariant("");
+    setIsVariant("false");
+  }, [product]);
+
+  /*
+
+* Clean up object URLs when previews change/unmount.
+  */
+  useEffect(() => {
+    return () => {
+      newImagePreviews.forEach((preview) => {
+        URL.revokeObjectURL(preview);
+      });
+    };
+  }, [newImagePreviews]);
+
+  const categoryOptions = useMemo(
+    () =>
+      categories.map((category) => ({
+        value: category.id.toString(),
+        label: category.name,
+      })),
+    [categories],
+  );
+
+  const variantOptions = useMemo(
+    () =>
+      variants
+        .filter((variant) => variant.id !== product?.variantId?.id)
+        .map((variant) => ({
+          value: variant.id.toString(),
+          label: variant.name,
+        })),
+    [variants, product?.variantId?.id],
+  );
+
+  const handleDialogChange = (open: boolean) => {
+    if (isSubmitting) return;
+
+    if (!open) {
       setNewImageFiles([]);
       setNewImagePreviews([]);
       setRemovedImages([]);
-      // Set variant-related fields
-      setVariantName(product.variantId?.name || "");
-      setColorCode(product.colorCode || "#ffffff");
-      setColorName(product.colorName || "");
-      setIsVariant("false"); // Default to creating new variant
       setSelectedVariant("");
     }
-  }, [product]);
 
-  const categoryOptions = useMemo(() => {
-    return categories.map((cat) => ({
-      value: cat.id.toString(),
-      label: cat.name,
-    }));
-  }, [categories]);
+    onOpenChange(open);
+  };
 
-  const variantOptions = useMemo(() => {
-    return variants
-      .filter((variant) => variant.id !== product?.variantId?.id) // Exclude current variant
-      .map((variant) => ({
-        value: variant.id.toString(),
-        label: variant.name,
-      }));
-  }, [variants, product?.variantId?.id]);
+  const handleRemoveExistingImage = (image: ProductImage) => {
+    setExistingImages((prev) => prev.filter((item) => item.id !== image.id));
 
-  const handleRemoveExistingImage = (imageId: string) => {
-    const imageToRemove = existingImages.find((img) => img.id === imageId);
-    if (!imageToRemove) return;
-
-    setRemovedImages((prev) => [...prev, imageToRemove]);
-    setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+    setRemovedImages((prev) => [...prev, image]);
   };
 
   const handleRestoreImage = (image: ProductImage) => {
-    setExistingImages((prev) => [...prev, image]);
-    setRemovedImages((prev) => prev.filter((img) => img.id !== image.id));
+    setRemovedImages((prev) => prev.filter((item) => item.id !== image.id));
+
+    setExistingImages((prev) => {
+      if (prev.some((item) => item.id === image.id)) {
+        return prev;
+      }
+
+      return [...prev, image];
+    });
   };
 
   const handleNewImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setNewImageFiles((prev) => [...prev, ...files]);
 
-    const previews = files.map((file) => URL.createObjectURL(file));
+    if (!files.length) return;
+
+    const validFiles: File[] = [];
+
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not a valid image.`);
+        continue;
+      }
+
+      if (file.size > MAX_IMAGE_SIZE) {
+        toast.error(`${file.name} is larger than 10MB.`);
+        continue;
+      }
+
+      validFiles.push(file);
+    }
+
+    if (!validFiles.length) {
+      e.target.value = "";
+      return;
+    }
+
+    const previews = validFiles.map((file) => URL.createObjectURL(file));
+
+    setNewImageFiles((prev) => [...prev, ...validFiles]);
     setNewImagePreviews((prev) => [...prev, ...previews]);
+
+    e.target.value = "";
   };
 
-  const handleRemoveNewImage = (indexToRemove: number) => {
+  const handleRemoveNewImage = (index: number) => {
+    const preview = newImagePreviews[index];
+
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+
     setNewImageFiles((prev) =>
-      prev.filter((_, index) => index !== indexToRemove)
+      prev.filter((_, imageIndex) => imageIndex !== index),
     );
+
     setNewImagePreviews((prev) =>
-      prev.filter((_, index) => index !== indexToRemove)
+      prev.filter((_, imageIndex) => imageIndex !== index),
     );
   };
 
@@ -168,17 +262,31 @@ export function EditProductDialog({
     e.preventDefault();
 
     if (!product) {
-      toast.error("No product selected for editing.");
+      toast.error("No product selected.");
       return;
     }
 
-    if (!name || !description || !selectedCategory) {
-      toast.error("Please fill in all required fields.");
+    const trimmedName = name.trim();
+    const trimmedDescription = description.trim();
+    const trimmedColorName = colorName.trim();
+
+    if (!trimmedName) {
+      toast.error("Please enter a product name.");
       return;
     }
 
-    if (!colorCode || !colorName) {
-      toast.error("Please provide color code and color name.");
+    if (!trimmedDescription) {
+      toast.error("Please enter a product description.");
+      return;
+    }
+
+    if (!selectedCategory) {
+      toast.error("Please select a category.");
+      return;
+    }
+
+    if (!colorCode || !trimmedColorName) {
+      toast.error("Please provide a color code and color name.");
       return;
     }
 
@@ -188,324 +296,505 @@ export function EditProductDialog({
     }
 
     if (existingImages.length === 0 && newImageFiles.length === 0) {
-      toast.error("Please upload at least one image.");
+      toast.error("A product must have at least one image.");
       return;
     }
 
     setIsSubmitting(true);
+
     try {
       let uploadedNewImages: ProductImage[] = [];
+
       if (newImageFiles.length > 0) {
         uploadedNewImages = await uploadMultipleToCloudinary(newImageFiles);
+
+        if (uploadedNewImages.length !== newImageFiles.length) {
+          toast.error("Some images failed to upload. Please try again.");
+          return;
+        }
       }
 
       const allImages = [...existingImages, ...uploadedNewImages];
 
-      // const updatedData: any = {
-      //   name,
-      //   description,
-      //   categoryId: selectedCategory,
-      //   images: allImages,
-      //   colorCode,
-      //   colorName,
-      //   isVariant,
-      // };
-
       const updatedData: UpdateProductPayload = {
-        name,
-        description,
-        categoryId: selectedCategory.toString(),
+        name: trimmedName,
+        description: trimmedDescription,
+        categoryId: selectedCategory,
         images: allImages,
         colorCode,
-        colorName,
-        isVariant: isVariant == "true" ? "true" : "false",
+        colorName: trimmedColorName,
+        isVariant,
         ...(isVariant === "true"
-          ? { newVariantId: selectedVariant }
-          : { variantName: variantName || name }),
+          ? {
+              newVariantId: selectedVariant,
+            }
+          : {
+              variantName: variantName.trim() || trimmedName,
+            }),
       };
 
-      if (isVariant === "true") {
-        updatedData.newVariantId = selectedVariant;
-      } else {
-        updatedData.variantName = variantName || name;
-      }
-
       await updateProduct(product.id, updatedData);
-      toast.success(`Product "${name}" updated successfully!`);
+
+      toast.success(`"${trimmedName}" updated successfully.`);
+
+      setNewImageFiles([]);
+      setNewImagePreviews([]);
+      setRemovedImages([]);
+
       onOpenChange(false);
+      router.refresh();
     } catch (error) {
-      toast.error("Failed to update product.");
       console.error("Error updating product:", error);
+      toast.error("Failed to update product. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Edit Product</DialogTitle>
+    <Dialog open={isOpen} onOpenChange={handleDialogChange}>
+      {" "}
+      <DialogContent className="max-h-[92vh] sm:max-w-2xl overflow-hidden p-0">
+        {/* Header */}{" "}
+        <DialogHeader className="border-b bg-muted/10 px-6 py-5">
+          {" "}
+          <DialogTitle className="text-xl">Edit Product </DialogTitle>
           <DialogDescription>
-            Make changes to the product details here.
+            Update product details, images, color, category, and variant
+            information.
           </DialogDescription>
         </DialogHeader>
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 overflow-x-hidden max-h-[calc(100vh-150px)] overflow-y-auto pr-2"
+          className="flex max-h-[calc(100vh-180px)] flex-col"
         >
-          <div className="space-y-2">
-            <Label htmlFor="editProductName" className="text-sm font-medium">
-              Product Name *
-            </Label>
-            <Input
-              id="editProductName"
-              name="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Carrara Marble Vase"
-              required
-              disabled={isSubmitting}
-            />
-          </div>
+          {/* Scrollable content */}
+          <div className="custom-scrollbar flex-1 space-y-7 overflow-y-auto px-6 py-6">
+            {/* Basic Information */}
+            <section className="space-y-5">
+              <div>
+                <h3 className="text-sm font-semibold">Basic Information</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Keep your product information clear and descriptive.
+                </p>
+              </div>
 
-          <div className="space-y-2">
-            <Label
-              htmlFor="editProductCategory"
-              className="text-sm font-medium"
-            >
-              Category *
-            </Label>
-            <Combobox
-              options={categoryOptions}
-              value={selectedCategory.toString()}
-              onValueChange={setSelectedCategory}
-              placeholder="Select a Category"
-              searchPlaceholder="Search categories..."
-              emptyMessage="No categories found."
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="editProductName">
+                  Product Name <span className="text-destructive">*</span>
+                </Label>
 
-          <div className="space-y-2">
-            <Label
-              htmlFor="editProductDescription"
-              className="text-sm font-medium"
-            >
-              Description *
-            </Label>
-            <Textarea
-              id="editProductDescription"
-              name="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe this product..."
-              required
-              disabled={isSubmitting}
-            />
-          </div>
+                <Input
+                  id="editProductName"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., Carrara Marble Vase"
+                  disabled={isSubmitting}
+                  autoComplete="off"
+                />
+              </div>
 
-          {/* Color Selection - Always Required */}
-          <div className="space-y-4 p-4 border border-border/50 rounded-lg bg-muted/20">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Color Selection *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="editProductCategory">
+                  Category <span className="text-destructive">*</span>
+                </Label>
+
+                <Combobox
+                  options={categoryOptions}
+                  value={selectedCategory}
+                  onValueChange={setSelectedCategory}
+                  placeholder="Select a category"
+                  searchPlaceholder="Search categories..."
+                  emptyMessage="No categories found."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="editProductDescription">
+                  Description <span className="text-destructive">*</span>
+                </Label>
+
+                <Textarea
+                  id="editProductDescription"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe this product..."
+                  rows={5}
+                  disabled={isSubmitting}
+                  className="resize-none"
+                />
+              </div>
+            </section>
+
+            {/* Color & Variant */}
+            <section className="space-y-5 rounded-xl border bg-muted/20 p-5">
+              <div>
+                <h3 className="text-sm font-semibold">Color & Variant</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Configure the product&apos;s appearance and variant relationship.
+                </p>
+              </div>
+
+              {/* Color */}
               <div className="space-y-3">
+                <Label>
+                  Color <span className="text-destructive">*</span>
+                </Label>
+
                 <ColorEyeDropper
                   onColorChange={handleColorChange}
                   selectedColor={colorCode}
                 />
+
                 <Input
                   placeholder="Color name (e.g., Ocean Blue)"
                   value={colorName}
                   onChange={(e) => setColorName(e.target.value)}
-                  required
                   disabled={isSubmitting}
                 />
               </div>
-            </div>
 
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Variant Selection *</Label>
-              <RadioGroup
-                value={isVariant}
-                onValueChange={setIsVariant}
-                className="flex gap-6"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="false" id="edit-create-new-variant" />
-                  <Label htmlFor="edit-create-new-variant" className="text-sm">
-                    Update Current Variant
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="true" id="edit-add-to-existing" />
-                  <Label htmlFor="edit-add-to-existing" className="text-sm">
-                    Move to Existing Variant
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
+              {/* Variant mode */}
+              <div className="space-y-3">
+                <Label>
+                  Variant Action <span className="text-destructive">*</span>
+                </Label>
 
-            {isVariant === "false" && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Variant Name</Label>
-                <Input
-                  placeholder="Variant name (defaults to product name)"
-                  value={variantName}
-                  onChange={(e) => setVariantName(e.target.value)}
+                <RadioGroup
+                  value={isVariant}
+                  onValueChange={(value) =>
+                    setIsVariant(value as "true" | "false")
+                  }
+                  className="grid gap-3 sm:grid-cols-2"
                   disabled={isSubmitting}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Leave empty to use product name as variant name
+                >
+                  <label
+                    htmlFor="edit-update-current-variant"
+                    className="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-4 transition-colors hover:bg-muted/50"
+                  >
+                    <RadioGroupItem
+                      value="false"
+                      id="edit-update-current-variant"
+                      className="mt-0.5"
+                    />
+
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">
+                        Update Current Variant
+                      </p>
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        Keep this product in its current variant.
+                      </p>
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="edit-move-existing-variant"
+                    className="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-4 transition-colors hover:bg-muted/50"
+                  >
+                    <RadioGroupItem
+                      value="true"
+                      id="edit-move-existing-variant"
+                      className="mt-0.5"
+                    />
+
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">
+                        Move to Existing Variant
+                      </p>
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        Associate this product with another variant.
+                      </p>
+                    </div>
+                  </label>
+                </RadioGroup>
+              </div>
+
+              {/* Current variant name */}
+              {isVariant === "false" && (
+                <div className="space-y-2">
+                  <Label htmlFor="variantName">Variant Name</Label>
+
+                  <Input
+                    id="variantName"
+                    value={variantName}
+                    onChange={(e) => setVariantName(e.target.value)}
+                    placeholder="Defaults to product name"
+                    disabled={isSubmitting}
+                  />
+
+                  <p className="text-xs text-muted-foreground">
+                    Leave empty to use the product name.
+                  </p>
+                </div>
+              )}
+
+              {/* Existing variant */}
+              {isVariant === "true" && (
+                <div className="space-y-2">
+                  <Label>
+                    Existing Variant <span className="text-destructive">*</span>
+                  </Label>
+
+                  <Combobox
+                    options={variantOptions}
+                    value={selectedVariant}
+                    onValueChange={setSelectedVariant}
+                    placeholder={
+                      isLoadingVariants
+                        ? "Loading variants..."
+                        : "Select a variant"
+                    }
+                    searchPlaceholder="Search variants..."
+                    emptyMessage="No other variants found."
+                  />
+
+                  {isLoadingVariants && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Loading variants...
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+
+            {/* Existing Images */}
+            <section className="space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold">Product Images</h3>
+
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Keep at least one image attached to the product.
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
+                  {existingImages.length} active
+                </span>
+              </div>
+
+              {existingImages.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {existingImages.map((image, index) => (
+                    <div
+                      key={image.id}
+                      className="group relative overflow-hidden rounded-xl border bg-muted"
+                    >
+                      <div className="relative aspect-square">
+                        <Image
+                          unoptimized
+                          src={image.url || "/placeholder.svg"}
+                          alt={`Product image ${index + 1}`}
+                          fill
+                          sizes="(max-width: 640px) 50vw, 150px"
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 pt-8">
+                          <span className="text-xs font-medium text-white">
+                            Image {index + 1}
+                          </span>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute right-2 top-2 h-8 w-8 rounded-full opacity-0 shadow-md transition-opacity group-hover:opacity-100"
+                          onClick={() => handleRemoveExistingImage(image)}
+                          disabled={isSubmitting}
+                          aria-label={`Remove image ${index + 1}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 px-6 py-10 text-center">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                  </div>
+
+                  <p className="text-sm font-medium">No active images</p>
+
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Upload at least one image below.
+                  </p>
+                </div>
+              )}
+            </section>
+
+            {/* Removed Images */}
+            {removedImages.length > 0 && (
+              <section className="space-y-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-500/10">
+                    <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-semibold">Removed Images</h3>
+
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      These images will be removed when you save.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {removedImages.map((image) => (
+                    <div
+                      key={image.id}
+                      className="group relative overflow-hidden rounded-xl border border-dashed border-yellow-500/50 bg-background"
+                    >
+                      <div className="relative aspect-square opacity-60">
+                        <Image
+                          unoptimized
+                          src={image.url || "/placeholder.svg"}
+                          alt="Removed product image"
+                          fill
+                          sizes="150px"
+                          className="object-cover"
+                        />
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon"
+                        className="absolute right-2 top-2 h-8 w-8 rounded-full shadow-md"
+                        onClick={() => handleRestoreImage(image)}
+                        disabled={isSubmitting}
+                        aria-label="Restore image"
+                      >
+                        <Undo className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Upload New Images */}
+            <section className="space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold">Add New Images</h3>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  JPG, PNG, WebP, or AVIF. Maximum 10MB per image.
                 </p>
               </div>
-            )}
 
-            {isVariant === "true" && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Select Existing Variant *
-                </Label>
-                <Combobox
-                  options={variantOptions}
-                  value={selectedVariant}
-                  onValueChange={setSelectedVariant}
-                  placeholder="Select a Variant"
-                  searchPlaceholder="Search variants..."
-                  emptyMessage="No other variants found."
-                />
-              </div>
-            )}
-          </div>
+              <Label
+                htmlFor="editProductImages"
+                className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 px-6 py-8 text-center transition-colors hover:border-foreground/30 hover:bg-muted/40"
+              >
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-background shadow-sm">
+                  <Upload className="h-5 w-5 text-muted-foreground" />
+                </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Existing Images</Label>
-            {existingImages.length > 0 ? (
-              <div className="flex gap-2 overflow-x-auto pt-2">
-                {existingImages.map((img, index) => (
-                  <div
-                    key={img.id}
-                    className="relative group flex-shrink-0 w-20 h-20"
-                  >
-                    <Image
-                      unoptimized
-                      src={img.url || "/placeholder.svg"}
-                      width={80}
-                      height={80}
-                      alt={`Existing product image ${index + 1}`}
-                      className="aspect-square w-full h-full object-cover rounded-md border border-border"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleRemoveExistingImage(img.id)}
-                      disabled={isSubmitting}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                No existing images.
-              </p>
-            )}
-          </div>
+                <span className="text-sm font-medium">
+                  Click to upload images
+                </span>
 
-          {/* Recently Removed Section */}
-          {removedImages.length > 0 && (
-            <div className="space-y-2 mt-4">
-              <Label className="text-sm font-medium text-yellow-600">
-                Recently Removed
+                <span className="mt-1 text-xs text-muted-foreground">
+                  You can select multiple images
+                </span>
               </Label>
-              <div className="flex gap-2 pt-2 overflow-x-auto">
-                {removedImages.map((img) => (
-                  <div
-                    key={img.id}
-                    className="relative group flex-shrink-0 w-20 h-20"
-                  >
-                    <Image
-                      unoptimized
-                      src={img.url || "/placeholder.svg"}
-                      width={80}
-                      height={80}
-                      alt="Removed product image"
-                      className="aspect-square w-full h-full object-cover rounded-md border border-dashed border-yellow-500"
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleRestoreImage(img)}
-                      disabled={isSubmitting}
-                    >
-                      <Undo className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="editProductImages" className="text-sm font-medium">
-              Upload New Images
-            </Label>
-            <Input
-              id="editProductImages"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleNewImageChange}
-              disabled={isSubmitting}
-            />
-            {newImagePreviews.length > 0 && (
-              <div className="flex gap-2 pt-2 overflow-x-auto">
-                {newImagePreviews.map((src, index) => (
-                  <div
-                    key={index}
-                    className="relative group flex-shrink-0 w-20 h-20"
-                  >
-                    <Image
-                      unoptimized
-                      src={src || "/placeholder.svg"}
-                      width={80}
-                      height={80}
-                      alt={`New product preview ${index + 1}`}
-                      className="aspect-square w-full h-full object-cover rounded-md border border-border"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleRemoveNewImage(index)}
-                      disabled={isSubmitting}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+              <Input
+                id="editProductImages"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                multiple
+                onChange={handleNewImageChange}
+                disabled={isSubmitting}
+                className="sr-only"
+              />
+
+              {newImagePreviews.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium">New images</p>
+
+                    <span className="text-xs text-muted-foreground">
+                      {newImagePreviews.length} selected
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
+
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {newImagePreviews.map((src, index) => (
+                      <div
+                        key={src}
+                        className="group relative overflow-hidden rounded-xl border bg-muted"
+                      >
+                        <div className="relative aspect-square">
+                          <Image
+                            unoptimized
+                            src={src}
+                            alt={`New product image ${index + 1}`}
+                            fill
+                            sizes="150px"
+                            className="object-cover"
+                          />
+
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute right-2 top-2 h-8 w-8 rounded-full opacity-0 shadow-md transition-opacity group-hover:opacity-100"
+                            onClick={() => handleRemoveNewImage(index)}
+                            disabled={isSubmitting}
+                            aria-label={`Remove new image ${index + 1}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button type="submit" className="flex-1" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Changes"}
-            </Button>
+          {/* Sticky footer */}
+          <DialogFooter className="border-t bg-background px-6 py-4">
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleDialogChange(false)}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-          </div>
+
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                !name.trim() ||
+                !description.trim() ||
+                !selectedCategory ||
+                !colorName.trim() ||
+                (isVariant === "true" && !selectedVariant) ||
+                (existingImages.length === 0 && newImageFiles.length === 0)
+              }
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving Changes...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
